@@ -170,6 +170,12 @@ func (t *Telnet) SendCommand(codes ...TelnetCode) {
 	t.conn.Write(BuildCommand(codes...))
 }
 
+func (t *Telnet) SendGMCP(command string) {
+	t.SendCommand(SB, GMCP)
+	t.conn.Write([]byte(command))
+	t.SendCommand(SE)
+}
+
 func BuildCommand(codes ...TelnetCode) []byte {
 	command := make([]byte, len(codes)+1)
 	command[0] = codeToByte[IAC]
@@ -255,7 +261,7 @@ type telnetProcessor struct {
 func newTelnetProcessor() *telnetProcessor {
 	var tp telnetProcessor
 	tp.state = stateBase
-	tp.debug = true
+	tp.debug = false
 	tp.currentSB = NUL
 
 	return &tp

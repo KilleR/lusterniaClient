@@ -78,6 +78,8 @@ func doCustomTelnet() {
 		log.Println("IAC:", telnet.ToString(bytes))
 		if telnet.ToString(bytes) == telnet.ToString(telnet.BuildCommand(telnet.WILL, telnet.GMCP)) {
 			conn.SendCommand(telnet.DO, telnet.GMCP)
+			conn.SendGMCP(`Core.Hello { "client": "Ebony", "version:": "0.0.1" }`)
+			conn.SendGMCP(`Core.Supports.Set [ "Char 1", "Char.Status 1" ]`)
 		}
 	})
 
