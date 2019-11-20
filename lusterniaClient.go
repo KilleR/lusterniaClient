@@ -58,7 +58,7 @@ func initTelnet() {
 		}
 	}()
 
-	reader:= bufio.NewReader(os.Stdin)
+	reader := bufio.NewReader(os.Stdin)
 	for {
 		text, _ := reader.ReadString('\n')
 		conn.Write([]byte(text))
@@ -71,6 +71,15 @@ func doCustomTelnet() {
 		log.Fatalln("Failed to dial server:", err)
 	}
 	conn := telnet.NewTelnet(_conn)
+	conn.Listen(func(code telnet.TelnetCode, bytes []byte) {
+		log.Println(code, string(bytes))
+	})
+	conn.HandleIAC(func(bytes []byte) {
+		log.Println("IAC:", telnet.ToString(bytes))
+		if telnet.ToString(bytes) == telnet.ToString(telnet.BuildCommand(telnet.WILL, telnet.GMCP)) {
+			conn.SendCommand(telnet.DO, telnet.GMCP)
+		}
+	})
 
 	go func() {
 		for {
@@ -97,10 +106,10 @@ func doCustomTelnet() {
 		}
 	}()
 
-	reader:= bufio.NewReader(os.Stdin)
+	reader := bufio.NewReader(os.Stdin)
 	for {
 		text, _ := reader.ReadString('\n')
-		_,err = conn.Write([]byte(text))
+		_, err = conn.Write([]byte(text))
 		if err != nil {
 			fmt.Println("conn write error:", err)
 		}

@@ -107,6 +107,10 @@ func (t *Telnet) Listen(listenFunc func(TelnetCode, []byte)) {
 	t.processor.listenFunc = listenFunc
 }
 
+func (t *Telnet) HandleIAC(iacFunc func([]byte)) {
+	t.processor.iacFunc = iacFunc
+}
+
 // Idea/name for this function shamelessly stolen from bufio
 func (t *Telnet) fill() {
 	buf := make([]byte, 1)
@@ -243,6 +247,7 @@ type telnetProcessor struct {
 	subdata       map[TelnetCode][]byte
 	cleanData     string
 	listenFunc    func(TelnetCode, []byte)
+	iacFunc       func([]byte)
 
 	debug bool
 }
@@ -250,7 +255,7 @@ type telnetProcessor struct {
 func newTelnetProcessor() *telnetProcessor {
 	var tp telnetProcessor
 	tp.state = stateBase
-	tp.debug = false
+	tp.debug = true
 	tp.currentSB = NUL
 
 	return &tp
@@ -285,6 +290,7 @@ func (self *telnetProcessor) capture(b byte) {
 }
 
 func (self *telnetProcessor) dontCapture(b byte) {
+	self.capturedBytes = nil
 	self.cleanData = self.cleanData + string(b)
 }
 
@@ -327,14 +333,15 @@ func (self *telnetProcessor) addByte(b byte) {
 		}
 
 	case stateInIAC:
+		self.capture(b)
 		if code == WILL || code == WONT || code == DO || code == DONT {
 			// Stay in this state
 		} else if code == SB {
 			self.state = stateInSB
 		} else {
+			self.iacFinished()
 			self.state = stateBase
 		}
-		self.capture(b)
 
 	case stateInSB:
 		self.capture(b)
@@ -367,6 +374,13 @@ func (self *telnetProcessor) subDataFinished(code TelnetCode) {
 	if self.listenFunc != nil {
 		self.listenFunc(code, self.subdata[code])
 	}
+}
+
+func (self *telnetProcessor) iacFinished() {
+	if self.iacFunc != nil {
+		self.iacFunc(self.capturedBytes)
+	}
+	self.capturedBytes = nil
 }
 
 func ToString(bytes []byte) string {
