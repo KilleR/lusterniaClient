@@ -13,8 +13,13 @@ import (
 )
 
 var (
+	loginPass  string
 	ServerAddr = "lus.ndguarino.com:9876"
 )
+
+func init() {
+	loginPass = os.Getenv("password")
+}
 
 type caller struct{}
 
@@ -78,8 +83,10 @@ func doCustomTelnet() {
 		log.Println("IAC:", telnet.ToString(bytes))
 		if telnet.ToString(bytes) == telnet.ToString(telnet.BuildCommand(telnet.WILL, telnet.GMCP)) {
 			conn.SendCommand(telnet.DO, telnet.GMCP)
-			conn.SendGMCP(`Core.Hello { "client": "Ebony", "version:": "0.0.1" }`)
-			conn.SendGMCP(`Core.Supports.Set [ "Char 1", "Char.Status 1" ]`)
+			conn.SendGMCP(`Core.Hello { "client": "Ebony", "version": "0.0.1" }`)
+			conn.SendGMCP(`Core.Supports.Set ["Char 1", "Char.Skills 1", "Char.Items 1", "Comm.Channel 1", "IRE.Rift 1", "IRE.FileStore 1", "Room 1", "IRE.Composer 1", "Redirect 1", "IRE.Display 3", "IRE.Tasks 1", "IRE.Sound 1", "IRE.Misc 1", "IRE.Time 1", "IRE.Target 1"]`)
+			log.Println(loginPass)
+			conn.SendGMCP(`Char.Login { "name": "Geran", "password": "` + loginPass + `" }`)
 		}
 	})
 
