@@ -3,6 +3,7 @@ package main
 import (
 	"bufio"
 	"fmt"
+	"github.com/acarl005/stripansi"
 	"log"
 	"lusterniaClient/discord"
 	"lusterniaClient/telnet"
@@ -11,9 +12,10 @@ import (
 )
 
 var (
-	loginPass  string
-	ServerAddr = "lus.ndguarino.com:9876"
-	conns      map[string]*telnet.Telnet
+	loginPass   string
+	ServerAddr  = "lus.ndguarino.com:9876"
+	conns       map[string]*telnet.Telnet
+	unprintable = "\033[XXXm]"
 )
 
 func init() {
@@ -35,15 +37,13 @@ func doCustomTelnet(client string, send chan discord.DiscordMessage) (conn *teln
 	conn.HandleIAC(func(bytes []byte) {
 		log.Println("IAC:", telnet.ToString(bytes))
 		if telnet.ToString(bytes) == telnet.ToString(telnet.BuildCommand(telnet.GA)) {
-			log.Println("GO AHEAD")
-
 			_, err = os.Stdout.Write(outbuff)
 			if err != nil {
 				fmt.Println("stdout write error:", err)
 			}
 			send <- discord.DiscordMessage{
 				ClientID: client,
-				Content:  string(outbuff),
+				Content:  "```" + stripansi.Strip(string(outbuff)) + "```",
 			}
 
 			outbuff = []byte{}
@@ -52,8 +52,7 @@ func doCustomTelnet(client string, send chan discord.DiscordMessage) (conn *teln
 			conn.SendCommand(telnet.DO, telnet.GMCP)
 			conn.SendGMCP(`Core.Hello { "client": "Deathwish", "version": "0.0.1" }`)
 			conn.SendGMCP(`Core.Supports.Set ["Char 1", "Char.Skills 1", "Char.Items 1", "Comm.Channel 1", "IRE.Rift 1", "IRE.FileStore 1", "Room 1", "IRE.Composer 1", "Redirect 1", "IRE.Display 3", "IRE.Tasks 1", "IRE.Sound 1", "IRE.Misc 1", "IRE.Time 1", "IRE.Target 1"]`)
-			log.Println(loginPass)
-			conn.SendGMCP(`Char.Login { "name": "Geran", "password": "` + loginPass + `" }`)
+			//conn.SendGMCP(`Char.Login { "name": "Geran", "password": "` + loginPass + `" }`)}`)
 		}
 	})
 
@@ -79,14 +78,16 @@ func doCustomTelnet(client string, send chan discord.DiscordMessage) (conn *teln
 		}
 	}()
 
-	reader := bufio.NewReader(os.Stdin)
-	for {
-		text, _ := reader.ReadString('\n')
-		_, err = conn.Write([]byte(text))
-		if err != nil {
-			fmt.Println("conn write error:", err)
-		}
-	}
+	return
+
+	//reader := bufio.NewReader(os.Stdin)
+	//for {
+	//	text, _ := reader.ReadString('\n')
+	//	_, err = conn.Write([]byte(text))
+	//	if err != nil {
+	//		fmt.Println("conn write error:", err)
+	//	}
+	//}
 }
 
 func main() {
@@ -96,13 +97,17 @@ func main() {
 	go func() {
 		for {
 			msg := <-d.Recv
-			fmt.Println(msg)
+			fmt.Println("Discord message:", msg)
 			conn, ok := conns[msg.ClientID]
 			if !ok {
 				conn = doCustomTelnet(msg.ClientID, d.Send)
 				conns[msg.ClientID] = conn
+			} else {
+				_, err := conn.Write([]byte(msg.Content + "\n"))
+				if err != nil {
+					log.Println("Error sending to telnet:", err)
+				}
 			}
-			conn.Write([]byte(msg.Content))
 		}
 	}()
 
@@ -110,6 +115,5 @@ func main() {
 	for {
 		text, _ := reader.ReadString('\n')
 		fmt.Println("ECHO:", text)
-
 	}
 }
