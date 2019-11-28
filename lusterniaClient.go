@@ -4,18 +4,20 @@ import (
 	"bufio"
 	"fmt"
 	"github.com/acarl005/stripansi"
+	"github.com/asticode/go-astilectron"
+	"github.com/asticode/go-astilog"
+	astiptr "github.com/asticode/go-astitools/ptr"
+	"github.com/pkg/errors"
 	"log"
-	"lusterniaClient/discord"
 	"lusterniaClient/telnet"
 	"net"
 	"os"
 )
 
 var (
-	loginPass   string
-	ServerAddr  = "lus.ndguarino.com:9876"
-	conns       map[string]*telnet.Telnet
-	unprintable = "\033[XXXm]"
+	loginPass  string
+	ServerAddr = "lus.ndguarino.com:9876"
+	conns      map[string]*telnet.Telnet
 )
 
 func init() {
@@ -23,7 +25,7 @@ func init() {
 	conns = make(map[string]*telnet.Telnet)
 }
 
-func doCustomTelnet(client string, send chan discord.DiscordMessage) (conn *telnet.Telnet) {
+func doCustomTelnet(client string, send chan string) (conn *telnet.Telnet) {
 	var outbuff []byte
 
 	_conn, err := net.Dial("tcp", ServerAddr)
@@ -41,10 +43,7 @@ func doCustomTelnet(client string, send chan discord.DiscordMessage) (conn *teln
 			if err != nil {
 				fmt.Println("stdout write error:", err)
 			}
-			send <- discord.DiscordMessage{
-				ClientID: client,
-				Content:  "```" + stripansi.Strip(string(outbuff)) + "```",
-			}
+			send <- stripansi.Strip(string(outbuff))
 
 			outbuff = []byte{}
 		}
@@ -90,26 +89,97 @@ func doCustomTelnet(client string, send chan discord.DiscordMessage) (conn *teln
 	//}
 }
 
-func main() {
-	//doCustomTelnet()
-	var d discord.Discord
-	d.Connect()
+func bootstrapAstilectron() {
+	telnetOut := make(chan string)
+	doCustomTelnet("me", telnetOut)
+
+	a, _ := astilectron.New(astilectron.Options{
+		AppName: "Deathwish MUD",
+	})
+	defer a.Close()
+
+	a.HandleSignals()
+
+	err := a.Start()
+	if err != nil {
+		astilog.Fatal(errors.Wrap(err, "main: new window failed"))
+	}
+
+	// New window
+	var w *astilectron.Window
+	if w, err = a.NewWindow("example/index.html", &astilectron.WindowOptions{
+		Center:         astiptr.Bool(true),
+		Fullscreenable: astiptr.Bool(true),
+		Height:         astiptr.Int(900),
+		Width:          astiptr.Int(1200),
+	}); err != nil {
+		astilog.Fatal(errors.Wrap(err, "main: new window failed"))
+	}
+
+	// Create windows
+	if err = w.Create(); err != nil {
+		astilog.Fatal(errors.Wrap(err, "main: creating window failed"))
+	}
+
+	w.OpenDevTools()
+
+	w.OnLogin(func(i astilectron.Event) (username, password string, err error) {
+		fmt.Println("login:", i)
+		return "fred", "bob", nil
+	})
+
+	w.SendMessage("ho ho ho", func(m *astilectron.EventMessage) {
+		var s string
+		m.Unmarshal(&s)
+
+		fmt.Println(s)
+	})
+
 	go func() {
 		for {
-			msg := <-d.Recv
-			fmt.Println("Discord message:", msg)
-			conn, ok := conns[msg.ClientID]
-			if !ok {
-				conn = doCustomTelnet(msg.ClientID, d.Send)
-				conns[msg.ClientID] = conn
-			} else {
-				_, err := conn.Write([]byte(msg.Content + "\n"))
-				if err != nil {
-					log.Println("Error sending to telnet:", err)
-				}
-			}
+			msg := <-telnetOut
+			w.SendMessage(msg, func(m *astilectron.EventMessage) {
+				var s string
+				m.Unmarshal(&s)
+
+				fmt.Println(s)
+			})
 		}
 	}()
+
+	// Create the notification
+	var n = a.NewNotification(&astilectron.NotificationOptions{
+		Body:             "My Body",
+		HasReply:         astilectron.PtrBool(true), // Only MacOSX
+		Icon:             "/path/to/icon",
+		ReplyPlaceholder: "type your reply here", // Only MacOSX
+		Title:            "My title",
+	})
+
+	// Add listeners
+	n.On(astilectron.EventNameNotificationEventClicked, func(e astilectron.Event) (deleteListener bool) {
+		fmt.Println("the notification has been clicked!")
+		return
+	})
+	// Only for MacOSX
+	n.On(astilectron.EventNameNotificationEventReplied, func(e astilectron.Event) (deleteListener bool) {
+		fmt.Println("the user has replied to the notification: %s", e.Reply)
+		return
+	})
+
+	// Create notification
+	n.Create()
+
+	// Show notification
+	n.Show()
+
+	a.Wait()
+}
+
+func main() {
+	bootstrapAstilectron()
+
+	return
 
 	reader := bufio.NewReader(os.Stdin)
 	for {
