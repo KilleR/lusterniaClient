@@ -3,17 +3,45 @@
 <head>
     <meta charset="UTF-8">
     <title>TEST</title>
+    <link rel="stylesheet" type="text/css" href="base.css"/>
     <script type="text/javascript">
+        sendMessage = (message) => {
+
+        };
+
+        window.onfocus = () => {
+            console.log('gained focus');
+            const input = document.getElementById('prompt');
+            console.log(input);
+            input.focus();
+        }
+
         document.addEventListener('astilectron-ready', () => {
             astilectron.onMessage(function (message) {
                 console.log('aim', message);
-                return 'gotcha';
+                const output = document.getElementById('output');
+                output.innerHTML += `<p style="white-space: pre">${message}</p>`;
+
+                output.scrollTop = output.scrollHeight;
+                return 'ACK';
             })
 
+            sendMessage = () => {
+                const input = document.getElementById('prompt');
+                astilectron.sendMessage(input.value, (response) => {
+                    console.log('response:', response);
+                })
+                input.value = ''
+            }
         })
     </script>
 </head>
 <body>
-
+<div style="height: 100%; width: 100%; font-family: monospace; background: black; color: green; overflow: auto"
+     id="output"></div>
+<form action="javascript:void(0)" onsubmit="sendMessage();">
+    <input style="position:fixed; bottom: 0; width: 100%" id="prompt"/>
+    <button hidden></button>
+</form>
 </body>
 </html>

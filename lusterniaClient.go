@@ -2,6 +2,7 @@ package main
 
 import (
 	"bufio"
+	"encoding/json"
 	"fmt"
 	"github.com/acarl005/stripansi"
 	"github.com/asticode/go-astilectron"
@@ -12,7 +13,14 @@ import (
 	"lusterniaClient/telnet"
 	"net"
 	"os"
+	"regexp"
+	"time"
 )
+
+type GMCPRequest struct {
+	Method string
+	Data   interface{}
+}
 
 var (
 	loginPass  string
@@ -34,7 +42,15 @@ func doCustomTelnet(client string, send chan string) (conn *telnet.Telnet) {
 	}
 	conn = telnet.NewTelnet(_conn)
 	conn.Listen(func(code telnet.TelnetCode, bytes []byte) {
-		log.Println(code, string(bytes))
+		log.Println("code:", telnet.CodeToString(code), string(bytes))
+		if code == telnet.GMCP {
+			rex := regexp.MustCompile(`^((?:[a-zA-Z]+\.?)+) (.+)$`)
+			matches := rex.FindStringSubmatch(string(bytes))
+			var gmcp GMCPRequest
+			gmcp.Method = matches[1]
+			json.Unmarshal([]byte(matches[2]), &gmcp.Data)
+			log.Println(json.MarshalIndent(gmcp, "", "  "))
+		}
 	})
 	conn.HandleIAC(func(bytes []byte) {
 		log.Println("IAC:", telnet.ToString(bytes))
@@ -52,6 +68,10 @@ func doCustomTelnet(client string, send chan string) (conn *telnet.Telnet) {
 			conn.SendGMCP(`Core.Hello { "client": "Deathwish", "version": "0.0.1" }`)
 			conn.SendGMCP(`Core.Supports.Set ["Char 1", "Char.Skills 1", "Char.Items 1", "Comm.Channel 1", "IRE.Rift 1", "IRE.FileStore 1", "Room 1", "IRE.Composer 1", "Redirect 1", "IRE.Display 3", "IRE.Tasks 1", "IRE.Sound 1", "IRE.Misc 1", "IRE.Time 1", "IRE.Target 1"]`)
 			//conn.SendGMCP(`Char.Login { "name": "Geran", "password": "` + loginPass + `" }`)}`)
+			go func() {
+				<-time.After(time.Second * 30)
+				conn.SendGMCP(`IRE.FileStore.Request {"request": "list"}`)
+			}()
 		}
 	})
 
@@ -91,7 +111,7 @@ func doCustomTelnet(client string, send chan string) (conn *telnet.Telnet) {
 
 func bootstrapAstilectron() {
 	telnetOut := make(chan string)
-	doCustomTelnet("me", telnetOut)
+	conn := doCustomTelnet("me", telnetOut)
 
 	a, _ := astilectron.New(astilectron.Options{
 		AppName: "Deathwish MUD",
@@ -123,18 +143,6 @@ func bootstrapAstilectron() {
 
 	w.OpenDevTools()
 
-	w.OnLogin(func(i astilectron.Event) (username, password string, err error) {
-		fmt.Println("login:", i)
-		return "fred", "bob", nil
-	})
-
-	w.SendMessage("ho ho ho", func(m *astilectron.EventMessage) {
-		var s string
-		m.Unmarshal(&s)
-
-		fmt.Println(s)
-	})
-
 	go func() {
 		for {
 			msg := <-telnetOut
@@ -147,31 +155,14 @@ func bootstrapAstilectron() {
 		}
 	}()
 
-	// Create the notification
-	var n = a.NewNotification(&astilectron.NotificationOptions{
-		Body:             "My Body",
-		HasReply:         astilectron.PtrBool(true), // Only MacOSX
-		Icon:             "/path/to/icon",
-		ReplyPlaceholder: "type your reply here", // Only MacOSX
-		Title:            "My title",
-	})
+	w.OnMessage(func(m *astilectron.EventMessage) (v interface{}) {
+		var s string
+		m.Unmarshal(&s)
 
-	// Add listeners
-	n.On(astilectron.EventNameNotificationEventClicked, func(e astilectron.Event) (deleteListener bool) {
-		fmt.Println("the notification has been clicked!")
-		return
+		fmt.Println("message from client:", s)
+		conn.Write([]byte(s + "\n"))
+		return nil
 	})
-	// Only for MacOSX
-	n.On(astilectron.EventNameNotificationEventReplied, func(e astilectron.Event) (deleteListener bool) {
-		fmt.Println("the user has replied to the notification: %s", e.Reply)
-		return
-	})
-
-	// Create notification
-	n.Create()
-
-	// Show notification
-	n.Show()
 
 	a.Wait()
 }
