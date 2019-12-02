@@ -20,7 +20,7 @@
             astilectron.onMessage(function (message) {
                 console.log('aim', message);
                 const output = document.getElementById('output');
-                output.innerHTML += `<p style="white-space: pre">${message}</p>`;
+                output.innerHTML += `<p style="white-space: pre-wrap">${message}</p>`;
 
                 output.scrollTop = output.scrollHeight;
                 return 'ACK';
@@ -37,7 +37,7 @@
     </script>
 </head>
 <body>
-<div style="height: 100%; width: 100%; font-family: monospace; background: black; color: green; overflow: auto"
+<div style="height: 100%; width: 100%; font-family: monospace; background: black; color: green; overflow-y: auto"
      id="output"></div>
 <form action="javascript:void(0)" onsubmit="sendMessage();">
     <input style="position:fixed; bottom: 0; width: 100%" id="prompt"/>
