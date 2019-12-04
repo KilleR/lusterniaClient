@@ -4,10 +4,15 @@
     <meta charset="UTF-8">
     <title>TEST</title>
     <link rel="stylesheet" type="text/css" href="base.css"/>
+    <script type="text/javascript" src="ansi-to-html.js"></script>
     <script type="text/javascript">
+        const convert = new Filter();
         sendMessage = (message) => {
 
         };
+
+
+        console.log(convert.toHtml('\x1b[30mblack\x1b[37mwhite'));
 
         window.onfocus = () => {
             console.log('gained focus');
@@ -16,11 +21,22 @@
             input.focus();
         }
 
+        window.onkeydown = () => {
+            const input = document.getElementById('prompt');
+            input.focus();
+        }
+
         document.addEventListener('astilectron-ready', () => {
             astilectron.onMessage(function (message) {
                 console.log('aim', message);
                 const output = document.getElementById('output');
-                output.innerHTML += `<p style="white-space: pre-wrap">${message}</p>`;
+                const content = JSON.parse(message);
+                const htmlContent = convert.toHtml(content.content);
+                console.log(htmlContent);
+                if (content.type === 'main') {
+                    output.innerHTML += `<p style="white-space: pre-wrap">${htmlContent}</p>`;
+                }
+
 
                 output.scrollTop = output.scrollHeight;
                 return 'ACK';
@@ -37,7 +53,7 @@
     </script>
 </head>
 <body>
-<div style="height: 100%; width: 100%; font-family: monospace; background: black; color: green; overflow-y: auto"
+<div style="height: 100%; width: 100%; font-family: monospace; background: black; color: white; overflow-y: auto"
      id="output"></div>
 <form action="javascript:void(0)" onsubmit="sendMessage();">
     <input style="position:fixed; bottom: 0; width: 100%" id="prompt"/>

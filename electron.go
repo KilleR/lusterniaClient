@@ -10,7 +10,7 @@ import (
 
 func bootstrapAstilectron() {
 	telnetOut := make(chan string)
-	conn := doCustomTelnet("me", telnetOut)
+	conn := doCustomTelnet(telnetOut)
 
 	a, _ := astilectron.New(astilectron.Options{
 		AppName: "Deathwish MUD",

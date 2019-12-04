@@ -12,23 +12,89 @@ import (
 	"time"
 )
 
-var ansiRex *regexp.Regexp
+type messageMain struct {
+	Type    string `json:"type"`
+	Content string `json:"content"`
+}
+
+var ansiRex map[string]*regexp.Regexp
 
 func init() {
-	ansiRex = regexp.MustCompile("\u001B\\[0m")
+	start := "\u001B\\["
+	ansiRex = make(map[string]*regexp.Regexp)
+	ansiRex["all"] = regexp.MustCompile(start + `([^m]+)m`)
+	ansiRex["basic"] = regexp.MustCompile(start + `([0-9]{2,3});?([0-9]{2,3})m`)
+	ansiRex["basic_bright"] = regexp.MustCompile(start + `1;([0-9]{2,3})m`)
+	ansiRex["fg_bright"] = regexp.MustCompile(start + `([0-9]+)m`)
+}
+
+func ansiToRGB(code int) (rgb string) {
+	if code == 0 {
+		return "#000000"
+	}
+	if code == 1 {
+		return "#800000"
+	}
+	if code == 2 {
+		return "#00b300"
+	}
+	if code == 3 {
+		return "#808000"
+	}
+	if code == 4 {
+		return "#0000a0"
+	}
+	if code == 5 {
+		return "#800080"
+	}
+	if code == 6 {
+		return "#008080"
+	}
+	if code == 7 {
+		return "#aaaaaa"
+	}
+
+	if code == 8 {
+		return "#464646"
+	}
+	if code == 9 {
+		return "#ff0000"
+	}
+	if code == 10 {
+		return "#00ff00"
+	}
+	if code == 11 {
+		return "#ffff00"
+	}
+	if code == 12 {
+		return "#0000ff"
+	}
+	if code == 13 {
+		return "#ff00ff"
+	}
+	if code == 14 {
+		return "#00ffff"
+	}
+	if code == 15 {
+		return "#ffffff"
+	}
+	return "#000000"
 }
 
 func ansiToHtml(raw []byte) []byte {
 	bytes.Contains(raw, []byte(`\u001b\[0m`))
 
-	res := ansiRex.FindAll(raw, -1)
-	for _, v := range res {
-		log.Println("found ANSI reset:", string(v))
-	}
+	//for key,rex := range ansiRex {
+	//
+	//	res := rex.FindAllSubmatch(raw, -1)
+	//	for _, v := range res {
+	//		log.Println("found ANSI "+key+":", string(v[1]))
+	//	}
+	//}
 	return raw
 }
 
-func doCustomTelnet(client string, send chan string) (conn *telnet.Telnet) {
+func doCustomTelnet(send chan string) (conn *telnet.Telnet) {
 	var outbuff []byte
 
 	_conn, err := net.Dial("tcp", ServerAddr)
@@ -61,8 +127,16 @@ func doCustomTelnet(client string, send chan string) (conn *telnet.Telnet) {
 
 			ansiToHtml(outbuff)
 
-			send <- string(outbuff)
-			//send <- stripansi.Strip(string(outbuff))
+			var outputMessage messageMain
+			outputMessage.Type = "main"
+			outputMessage.Content = string(outbuff)
+			outBytes, err := json.MarshalIndent(outputMessage, "", "  ")
+			if err != nil {
+				log.Println(err)
+				return
+			}
+			send <- string(outBytes)
+			//send <- stripansi.Strip(string(outBytes))
 
 			outbuff = []byte{}
 			break
