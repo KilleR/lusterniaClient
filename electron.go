@@ -26,7 +26,7 @@ func bootstrapAstilectron() {
 
 	// New window
 	var w *astilectron.Window
-	if w, err = a.NewWindow("example/index.html", &astilectron.WindowOptions{
+	if w, err = a.NewWindow("lusterniaGui/dist/lusterniaGui/index.html", &astilectron.WindowOptions{
 		Center:         astiptr.Bool(true),
 		Fullscreenable: astiptr.Bool(true),
 		Height:         astiptr.Int(900),
@@ -46,7 +46,11 @@ func bootstrapAstilectron() {
 		for {
 			msg := <-telnetOut
 			w.SendMessage(msg, func(m *astilectron.EventMessage) {
-				var s string
+				if m == nil {
+					fmt.Println("Nil message")
+					return
+				}
+				var s interface{}
 				m.Unmarshal(&s)
 
 				fmt.Println(s)

@@ -1,0 +1,6 @@
+<mat-toolbar>
+  Lusternia Client
+</mat-toolbar>
+<p *ngFor="let message of messages" style="white-space: pre-wrap" [innerHTML]="message"></p>
+
+<input (submit)="sendMessage()" />

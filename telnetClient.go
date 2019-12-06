@@ -116,9 +116,9 @@ func doCustomTelnet(send chan string) (conn *telnet.Telnet) {
 			log.Println(string(JSON))
 		}
 	})
-	conn.HandleIAC(func(bytes []byte) {
-		log.Println("IAC:", telnet.ToString(bytes))
-		switch telnet.ToString(bytes) {
+	conn.HandleIAC(func(inBytes []byte) {
+		log.Println("IAC:", telnet.ToString(inBytes))
+		switch telnet.ToString(inBytes) {
 		case telnet.ToString(telnet.BuildCommand(telnet.GA)):
 			_, err = os.Stdout.Write(outbuff)
 			if err != nil {
@@ -135,6 +135,7 @@ func doCustomTelnet(send chan string) (conn *telnet.Telnet) {
 				log.Println(err)
 				return
 			}
+			outBytes = bytes.ReplaceAll(outBytes, []byte(`\r`), []byte(``))
 			send <- string(outBytes)
 			//send <- stripansi.Strip(string(outBytes))
 

@@ -5,6 +5,8 @@ import { AppComponent } from './app.component';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import {Route, RouterModule} from '@angular/router';
 import { WrapperComponent } from './wrapper/wrapper.component';
+import {MatSliderModule, MatToolbarModule} from '@angular/material';
+import {AstilectronModule} from './astilectron';
 
 const routes: Route[] = [
   {
@@ -21,7 +23,10 @@ const routes: Route[] = [
   imports: [
     BrowserModule,
     BrowserAnimationsModule,
-    RouterModule.forRoot(routes)
+    RouterModule.forRoot(routes),
+    AstilectronModule,
+    MatSliderModule,
+    MatToolbarModule
   ],
   providers: [],
   bootstrap: [AppComponent]
