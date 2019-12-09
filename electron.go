@@ -15,6 +15,8 @@ func bootstrapAstilectron() {
 	a, _ := astilectron.New(astilectron.Options{
 		AppName: "Deathwish MUD",
 	})
+	AstiClient = a
+
 	defer a.Close()
 
 	a.HandleSignals()

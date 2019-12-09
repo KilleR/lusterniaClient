@@ -112,6 +112,10 @@ func doCustomTelnet(send chan string) (conn *telnet.Telnet) {
 			var gmcp GMCPRequest
 			gmcp.Method = matches[1]
 			json.Unmarshal([]byte(matches[2]), &gmcp.Data)
+			if gmcp.Method == "Core.Goodbye" {
+				log.Println("GOODBYE")
+				AstiClient.Stop()
+			}
 			JSON, _ := json.MarshalIndent(gmcp, "", "  ")
 			log.Println(string(JSON))
 		}

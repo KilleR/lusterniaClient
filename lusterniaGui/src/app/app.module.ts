@@ -7,6 +7,7 @@ import {Route, RouterModule} from '@angular/router';
 import { WrapperComponent } from './wrapper/wrapper.component';
 import {MatSliderModule, MatToolbarModule} from '@angular/material';
 import {AstilectronModule} from './astilectron';
+import {ReactiveFormsModule} from '@angular/forms';
 
 const routes: Route[] = [
   {
@@ -26,7 +27,8 @@ const routes: Route[] = [
     RouterModule.forRoot(routes),
     AstilectronModule,
     MatSliderModule,
-    MatToolbarModule
+    MatToolbarModule,
+    ReactiveFormsModule
   ],
   providers: [],
   bootstrap: [AppComponent]

@@ -1,6 +1,15 @@
-<mat-toolbar>
-  Lusternia Client
-</mat-toolbar>
-<p *ngFor="let message of messages" style="white-space: pre-wrap" [innerHTML]="message"></p>
+<div id="wrapper">
+  <mat-toolbar class="main-header">
+    Lusternia Client
+  </mat-toolbar>
 
-<input (submit)="sendMessage()" />
+  <div #mainPane class="main-content">
+    <p *ngFor="let message of messages" style="white-space: pre-wrap" [innerHTML]="message"></p>
+  </div>
+
+  <div class="main-input">
+    <form [formGroup]="form" (submit)="handlePromptSubmit()">
+      <input formControlName="prompt"/>
+    </form>
+  </div>
+</div>

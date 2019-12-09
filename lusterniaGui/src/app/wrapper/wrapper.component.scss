@@ -1,0 +1,19 @@
+#wrapper {
+  height: 100vh;
+  display: grid;
+  grid-template-columns: 1fr;
+}
+
+.main-header {
+  grid-auto-rows: auto;
+}
+
+.main-content {
+  grid-auto-rows: auto;
+  overflow: auto;
+  overflow-x: hidden;
+}
+
+.main-input {
+
+}

@@ -1,6 +1,8 @@
-import {ChangeDetectorRef, Component, OnInit, ViewEncapsulation} from '@angular/core';
+import {ChangeDetectorRef, Component, ElementRef, OnInit, ViewChild, ViewEncapsulation} from '@angular/core';
 import {Astilectron} from '../astilectron';
 import * as Convert from 'ansi-to-html';
+import {DomSanitizer} from '@angular/platform-browser';
+import {FormBuilder, FormGroup} from '@angular/forms';
 
 @Component({
   selector: 'app-wrapper',
@@ -12,7 +14,11 @@ export class WrapperComponent implements OnInit {
   messages = [];
   convert: any;
 
-  constructor(private cdr: ChangeDetectorRef, private asti: Astilectron) {
+  form: FormGroup;
+
+  @ViewChild('mainPane', {static: false}) mainPane: ElementRef;
+
+  constructor(private cdr: ChangeDetectorRef, private asti: Astilectron, private sanitizer: DomSanitizer, private _fb: FormBuilder) {
     this.convert = new Convert({
       fg: '#FFF',
       bg: '#000',
@@ -20,18 +26,22 @@ export class WrapperComponent implements OnInit {
       escapeXML: false,
       stream: true
     });
+    this.form = _fb.group({
+      prompt: [''],
+    });
   }
 
   ngOnInit() {
     this.asti.messages.subscribe(msg => {
       console.log(msg);
       const content = JSON.parse(msg);
-      const htmlContent = this.convert.toHtml(content.content);
+      const htmlContent = this.sanitizer.bypassSecurityTrustHtml(this.convert.toHtml(content.content));
       console.log(htmlContent);
       if (content.type === 'main') {
         // output.innerHTML += `<p style="white-space: pre-wrap">${htmlContent}</p>`;
         this.messages.push(htmlContent);
         this.cdr.detectChanges();
+        this.mainPane.nativeElement.scrollTop = this.mainPane.nativeElement.scrollHeight;
       }
     });
     // document.addEventListener('astilectron-ready', () => {
@@ -54,12 +64,18 @@ export class WrapperComponent implements OnInit {
     // });
   }
 
-  sendMessage(msg: string) {
-    const input = document.getElementById('prompt');
-    // astilectron.sendMessage(msg, (response) => {
-    //   console.log('response:', response);
-    // });
-    this.asti.send('thing', 'stuff');
+  handlePromptSubmit() {
+    const prompt = this.form.get('prompt');
+    const message = prompt.value;
+    this.sendToAsti(message);
+    prompt.setValue('');
+  }
+
+  sendToAsti(msg: string) {
+    console.log('send:', msg);
+    this.asti.send(msg).subscribe(res => {
+      console.log('response from Asti:', res);
+    });
   }
 
 }
