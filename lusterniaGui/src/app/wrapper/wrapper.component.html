@@ -9,7 +9,9 @@
 
   <div class="main-input">
     <form [formGroup]="form" (submit)="handlePromptSubmit()">
-      <input formControlName="prompt"/>
+      <mat-form-field style="width: 100%">
+        <textarea matInput cdkTextareaAutosize placeholder="prompt" formControlName="prompt" (keydown)="$event.stopPropagation();promptKeyDown($event)" #prompt></textarea>
+      </mat-form-field>
     </form>
   </div>
 </div>

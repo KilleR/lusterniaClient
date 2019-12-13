@@ -5,7 +5,7 @@ import { AppComponent } from './app.component';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import {Route, RouterModule} from '@angular/router';
 import { WrapperComponent } from './wrapper/wrapper.component';
-import {MatSliderModule, MatToolbarModule} from '@angular/material';
+import {MatInputModule, MatSliderModule, MatToolbarModule} from '@angular/material';
 import {AstilectronModule} from './astilectron';
 import {ReactiveFormsModule} from '@angular/forms';
 
@@ -28,7 +28,8 @@ const routes: Route[] = [
     AstilectronModule,
     MatSliderModule,
     MatToolbarModule,
-    ReactiveFormsModule
+    ReactiveFormsModule,
+    MatInputModule
   ],
   providers: [],
   bootstrap: [AppComponent]
