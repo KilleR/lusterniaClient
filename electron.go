@@ -36,6 +36,7 @@ func bootstrapAstilectron() {
 	}); err != nil {
 		astilog.Fatal(errors.Wrap(err, "main: new window failed"))
 	}
+	AstiWindow = w
 
 	// Create windows
 	if err = w.Create(); err != nil {
@@ -68,6 +69,11 @@ func bootstrapAstilectron() {
 		conn.Write([]byte(s + "\n"))
 		return nil
 	})
+
+	go func() {
+		<-terminate
+		a.Stop()
+	}()
 
 	a.Wait()
 }

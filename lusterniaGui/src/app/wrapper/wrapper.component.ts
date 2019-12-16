@@ -3,6 +3,7 @@ import {Astilectron} from '../astilectron';
 import * as Convert from 'ansi-to-html';
 import {DomSanitizer} from '@angular/platform-browser';
 import {FormBuilder, FormGroup} from '@angular/forms';
+import {filter, map, share, tap} from 'rxjs/operators';
 
 @Component({
   selector: 'app-wrapper',
@@ -48,17 +49,24 @@ export class WrapperComponent implements OnInit {
   }
 
   ngOnInit() {
-    this.asti.messages.subscribe(msg => {
-      console.log(msg);
-      const content = JSON.parse(msg);
+    const messages$ = this.asti.messages.pipe(
+      map(msg => JSON.parse(msg)),
+      // tap(msg => console.log(msg)),
+      share());
+    const content$ = messages$.pipe(filter(msg => msg.type === 'main'));
+    const gmcp$ = messages$.pipe(filter(msg => msg.type === 'GMCP'));
+
+    content$.subscribe(content => {
       const htmlContent = this.sanitizer.bypassSecurityTrustHtml(this.convert.toHtml(content.content));
-      console.log(htmlContent);
       if (content.type === 'main') {
-        // output.innerHTML += `<p style="white-space: pre-wrap">${htmlContent}</p>`;
         this.messages.push(htmlContent);
         this.cdr.detectChanges();
         this.mainPane.nativeElement.scrollTop = this.mainPane.nativeElement.scrollHeight;
       }
+    });
+
+    gmcp$.subscribe(msg => {
+      console.log(msg);
     });
   }
 

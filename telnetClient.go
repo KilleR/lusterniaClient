@@ -12,11 +12,6 @@ import (
 	"time"
 )
 
-type messageMain struct {
-	Type    string `json:"type"`
-	Content string `json:"content"`
-}
-
 var ansiRex map[string]*regexp.Regexp
 
 func init() {
@@ -109,15 +104,18 @@ func doCustomTelnet(send chan string) (conn *telnet.Telnet) {
 		if code == telnet.GMCP {
 			rex := regexp.MustCompile(`^((?:[a-zA-Z]+\.?)+) (.+)$`)
 			matches := rex.FindStringSubmatch(string(bytes))
-			var gmcp GMCPRequest
+			var gmcp messageGMCP
+			gmcp.Type = "GMCP"
 			gmcp.Method = matches[1]
 			json.Unmarshal([]byte(matches[2]), &gmcp.Data)
 			if gmcp.Method == "Core.Goodbye" {
 				log.Println("GOODBYE")
-				AstiClient.Stop()
+				<-time.After(time.Second * 2)
+				terminate <- true
 			}
 			JSON, _ := json.MarshalIndent(gmcp, "", "  ")
 			log.Println(string(JSON))
+			AstiWindow.SendMessage(string(JSON))
 		}
 	})
 	conn.HandleIAC(func(inBytes []byte) {
