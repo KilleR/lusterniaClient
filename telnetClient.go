@@ -139,7 +139,6 @@ func doCustomTelnet(send chan string) (conn *telnet.Telnet) {
 			}
 			outBytes = bytes.ReplaceAll(outBytes, []byte(`\r`), []byte(``))
 			send <- string(outBytes)
-			//send <- stripansi.Strip(string(outBytes))
 
 			outbuff = []byte{}
 			break
@@ -149,7 +148,7 @@ func doCustomTelnet(send chan string) (conn *telnet.Telnet) {
 			conn.SendGMCP(`Core.Supports.Set ["Char 1", "Char.Skills 1", "Char.Items 1", "Comm.Channel 1", "IRE.Rift 1", "IRE.FileStore 1", "Room 1", "IRE.Composer 1", "Redirect 1", "IRE.Display 3", "IRE.Tasks 1", "IRE.Sound 1", "IRE.Misc 1", "IRE.Time 1", "IRE.Target 1"]`)
 			go func() {
 				<-time.After(time.Second * 30)
-				conn.SendGMCP(`IRE.FileStore.Request {"request": "list"}`)
+				conn.SendGMCP(`IRE.FileStore.Request {"request": "get html5-reflexes raw"}`)
 			}()
 			break
 
