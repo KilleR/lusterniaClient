@@ -50,6 +50,7 @@ export class WrapperComponent implements OnInit {
 
   ngOnInit() {
     const messages$ = this.asti.messages.pipe(
+      tap(msg => console.log('raw asti:', msg)),
       // map(msg => {
       //
       //   try {
@@ -60,13 +61,13 @@ export class WrapperComponent implements OnInit {
       //   }
       // }),
       share());
-    const content$ = messages$.pipe(filter(msg => msg.name === 'main'));
+    const content$ = messages$.pipe(filter(msg => msg.name === 'telnet.content'));
     const gmcp$ = messages$.pipe(filter(msg => msg.name === 'GMCP'));
 
     content$.subscribe(content => {
       console.log(content);
       const htmlContent = this.sanitizer.bypassSecurityTrustHtml(this.convert.toHtml(content.payload));
-      if (content.name === 'main') {
+      if (content.name === 'telnet.content') {
         this.messages.push(htmlContent);
         this.cdr.detectChanges();
         this.mainPane.nativeElement.scrollTop = this.mainPane.nativeElement.scrollHeight;

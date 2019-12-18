@@ -39,8 +39,7 @@ export class Astilectron {
   // matching result.
   public send(name: string, payload: string): Observable<string> {
     const jsonMsg = JSON.stringify({name, payload});
-    console.log('doing send', jsonMsg);
-    this.log('doing send', jsonMsg);
+    this.log('doing send', {name, payload});
     // Return error if not ready yet
     if (this._isReady.value === false) {
       const s = new Subject<string>();

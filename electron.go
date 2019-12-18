@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/json"
 	"flag"
+	"fmt"
 	"github.com/asticode/go-astilectron"
 	bootstrap "github.com/asticode/go-astilectron-bootstrap"
 	"github.com/asticode/go-astilog"
@@ -81,11 +82,27 @@ func bootstrapAstilectron() {
 
 			go func() {
 				telnetOut := make(chan string)
-				_ = doCustomTelnet(telnetOut)
+				conn := doCustomTelnet(telnetOut)
 				for {
-					msg := <-telnetOut
-					if err := bootstrap.SendMessage(w, "telnet.content", msg); err != nil {
-						astilog.Error(errors.Wrap(err, "sending telnet content failed"))
+					select {
+					case msg := <-telnetOut:
+						if err := bootstrap.SendMessage(w, "telnet.content", msg); err != nil {
+							astilog.Error(errors.Wrap(err, "sending telnet content failed"))
+						}
+						break
+					case msg := <-toTelnet:
+						fmt.Println("to telnet:", []byte(msg+"\n"))
+						conn.Write([]byte(msg + "\n"))
+						break
+					}
+				}
+			}()
+
+			go func() {
+				for {
+					msg := <-toAstiWindow
+					if err := bootstrap.SendMessage(w, msg.Name, msg.Payload); err != nil {
+						astilog.Error(errors.Wrap(err, "sending abstract message failed"))
 					}
 				}
 			}()
@@ -98,8 +115,8 @@ func bootstrapAstilectron() {
 			Options: &astilectron.WindowOptions{
 				BackgroundColor: astilectron.PtrStr("#333"),
 				Center:          astilectron.PtrBool(true),
-				Height:          astilectron.PtrInt(700),
-				Width:           astilectron.PtrInt(700),
+				Height:          astilectron.PtrInt(900),
+				Width:           astilectron.PtrInt(1200),
 			},
 		}},
 	}); err != nil {

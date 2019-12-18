@@ -26,7 +26,15 @@ func handleMessages(_ *astilectron.Window, m bootstrap.MessageIn) (payload inter
 			return
 		}
 	case "command":
-
+		var commandString string
+		if len(m.Payload) > 0 {
+			// Unmarshal payload
+			if err = json.Unmarshal(m.Payload, &commandString); err != nil {
+				payload = err.Error()
+				return
+			}
+			toTelnet <- commandString
+		}
 	}
 	return
 }

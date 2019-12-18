@@ -2,6 +2,7 @@ package main
 
 import (
 	"github.com/asticode/go-astilectron"
+	bootstrap "github.com/asticode/go-astilectron-bootstrap"
 	"os"
 )
 
@@ -24,14 +25,18 @@ var (
 	loginPass  string
 	ServerAddr = "lus.ndguarino.com:9876"
 	//ServerAddr = "lusternia.com:23"
-	AstiClient *astilectron.Astilectron
-	AstiWindow *astilectron.Window
-	terminate  chan bool
+	AstiClient   *astilectron.Astilectron
+	AstiWindow   *astilectron.Window
+	terminate    chan bool
+	toTelnet     chan string
+	toAstiWindow chan bootstrap.MessageOut
 )
 
 func init() {
 	loginPass = os.Getenv("password")
 	terminate = make(chan bool)
+	toAstiWindow = make(chan bootstrap.MessageOut)
+	toTelnet = make(chan string)
 }
 
 func main() {

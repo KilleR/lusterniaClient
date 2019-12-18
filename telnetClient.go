@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	bootstrap "github.com/asticode/go-astilectron-bootstrap"
 	"log"
 	"lusterniaClient/telnet"
 	"net"
@@ -115,7 +116,11 @@ func doCustomTelnet(send chan string) (conn *telnet.Telnet) {
 			}
 			JSON, _ := json.MarshalIndent(gmcp, "", "  ")
 			log.Println(string(JSON))
-			AstiWindow.SendMessage(string(JSON))
+			toAstiWindow <- bootstrap.MessageOut{
+				Name:    matches[1],
+				Payload: matches[2],
+			}
+			//AstiWindow.SendMessage(string(JSON))
 		}
 	})
 	conn.HandleIAC(func(inBytes []byte) {
@@ -129,16 +134,8 @@ func doCustomTelnet(send chan string) (conn *telnet.Telnet) {
 
 			ansiToHtml(outbuff)
 
-			//var outputMessage messageMain
-			//outputMessage.Type = "main"
-			//outputMessage.Content = string(outbuff)
-			//outBytes, err := json.MarshalIndent(outputMessage, "", "  ")
-			//if err != nil {
-			//	log.Println(err)
-			//	return
-			//}
-			//outBytes = bytes.ReplaceAll(outBytes, []byte(`\r`), []byte(``))
-			send <- string(outbuff)
+			outBytes := bytes.ReplaceAll(outbuff, []byte("\r"), []byte(``))
+			send <- string(outBytes)
 
 			outbuff = []byte{}
 			break
@@ -147,8 +144,12 @@ func doCustomTelnet(send chan string) (conn *telnet.Telnet) {
 			conn.SendGMCP(`Core.Hello { "client": "Deathwish", "version": "0.0.1" }`)
 			conn.SendGMCP(`Core.Supports.Set ["Char 1", "Char.Skills 1", "Char.Items 1", "Comm.Channel 1", "IRE.Rift 1", "IRE.FileStore 1", "Room 1", "IRE.Composer 1", "Redirect 1", "IRE.Display 3", "IRE.Tasks 1", "IRE.Sound 1", "IRE.Misc 1", "IRE.Time 1", "IRE.Target 1"]`)
 			go func() {
-				<-time.After(time.Second * 30)
-				conn.SendGMCP(`IRE.FileStore.Request {"request": "get html5-reflexes raw"}`)
+				select {
+				case <-terminate:
+					break
+				case <-time.After(time.Second * 30):
+					conn.SendGMCP(`IRE.FileStore.Request {"request": "get html5-reflexes raw"}`)
+				}
 			}()
 			break
 
