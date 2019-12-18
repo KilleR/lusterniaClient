@@ -1,79 +1,108 @@
 package main
 
 import (
-	"fmt"
+	"encoding/json"
+	"flag"
 	"github.com/asticode/go-astilectron"
+	bootstrap "github.com/asticode/go-astilectron-bootstrap"
 	"github.com/asticode/go-astilog"
-	astiptr "github.com/asticode/go-astitools/ptr"
 	"github.com/pkg/errors"
+	"time"
+)
+
+// Constants
+const htmlAbout = `Welcome on <b>Astilectron</b> demo!<br>
+This is using the bootstrap and the bundler.`
+
+// Vars injected via ldflags by bundler
+var (
+	AppName            string
+	BuiltAt            string
+	VersionAstilectron string
+	VersionElectron    string
+)
+
+// Application Vars
+var (
+	debug = flag.Bool("d", true, "enables the debug mode")
+	w     *astilectron.Window
 )
 
 func bootstrapAstilectron() {
-	telnetOut := make(chan string)
-	conn := doCustomTelnet(telnetOut)
+	// Init
+	astilog.SetHandyFlags()
+	flag.Parse()
+	astilog.FlagInit()
 
-	a, _ := astilectron.New(astilectron.Options{
-		AppName: "Deathwish MUD",
-	})
-	AstiClient = a
-
-	defer a.Close()
-
-	a.HandleSignals()
-
-	err := a.Start()
-	if err != nil {
-		astilog.Fatal(errors.Wrap(err, "main: new window failed"))
-	}
-
-	// New window
-	var w *astilectron.Window
-	if w, err = a.NewWindow("lusterniaGui/dist/lusterniaGui/index.html", &astilectron.WindowOptions{
-		Center:         astiptr.Bool(true),
-		Fullscreenable: astiptr.Bool(true),
-		Height:         astiptr.Int(900),
-		Width:          astiptr.Int(1200),
-	}); err != nil {
-		astilog.Fatal(errors.Wrap(err, "main: new window failed"))
-	}
-	AstiWindow = w
-
-	// Create windows
-	if err = w.Create(); err != nil {
-		astilog.Fatal(errors.Wrap(err, "main: creating window failed"))
-	}
-
-	w.OpenDevTools()
-
-	go func() {
-		for {
-			msg := <-telnetOut
-			w.SendMessage(msg, func(m *astilectron.EventMessage) {
-				if m == nil {
-					fmt.Println("Nil message")
-					return
+	// Run bootstrap
+	astilog.Debugf("Running app built at %s", BuiltAt)
+	if err := bootstrap.Run(bootstrap.Options{
+		Asset:    Asset,
+		AssetDir: AssetDir,
+		AstilectronOptions: astilectron.Options{
+			AppName:            AppName,
+			AppIconDarwinPath:  "resources/icon.icns",
+			AppIconDefaultPath: "resources/icon.png",
+			VersionAstilectron: VersionAstilectron,
+			VersionElectron:    VersionElectron,
+		},
+		Debug: *debug,
+		MenuOptions: []*astilectron.MenuItemOptions{{
+			Label: astilectron.PtrStr("File"),
+			SubMenu: []*astilectron.MenuItemOptions{
+				{
+					Label: astilectron.PtrStr("About"),
+					OnClick: func(e astilectron.Event) (deleteListener bool) {
+						if err := bootstrap.SendMessage(w, "about", htmlAbout, func(m *bootstrap.MessageIn) {
+							// Unmarshal payload
+							var s string
+							if err := json.Unmarshal(m.Payload, &s); err != nil {
+								astilog.Error(errors.Wrap(err, "unmarshaling payload failed"))
+								return
+							}
+							astilog.Infof("About modal has been displayed and payload is %s!", s)
+						}); err != nil {
+							astilog.Error(errors.Wrap(err, "sending about event failed"))
+						}
+						return
+					},
+				},
+				{Role: astilectron.MenuItemRoleClose},
+			},
+		}},
+		OnWait: func(_ *astilectron.Astilectron, ws []*astilectron.Window, _ *astilectron.Menu, _ *astilectron.Tray, _ *astilectron.Menu) error {
+			w = ws[0]
+			go func() {
+				time.Sleep(5 * time.Second)
+				if err := bootstrap.SendMessage(w, "check.out.menu", "Don't forget to check out the menu!"); err != nil {
+					astilog.Error(errors.Wrap(err, "sending check.out.menu event failed"))
 				}
-				var s interface{}
-				m.Unmarshal(&s)
+			}()
 
-				fmt.Println(s)
-			})
-		}
-	}()
-
-	w.OnMessage(func(m *astilectron.EventMessage) (v interface{}) {
-		var s string
-		m.Unmarshal(&s)
-
-		fmt.Println("message from client:", s)
-		conn.Write([]byte(s + "\n"))
-		return nil
-	})
-
-	go func() {
-		<-terminate
-		a.Stop()
-	}()
-
-	a.Wait()
+			go func() {
+				telnetOut := make(chan string)
+				_ = doCustomTelnet(telnetOut)
+				for {
+					msg := <-telnetOut
+					if err := bootstrap.SendMessage(w, "telnet.content", msg); err != nil {
+						astilog.Error(errors.Wrap(err, "sending telnet content failed"))
+					}
+				}
+			}()
+			return nil
+		},
+		RestoreAssets: RestoreAssets,
+		Windows: []*bootstrap.Window{{
+			Homepage:       "index.html",
+			MessageHandler: handleMessages,
+			Options: &astilectron.WindowOptions{
+				BackgroundColor: astilectron.PtrStr("#333"),
+				Center:          astilectron.PtrBool(true),
+				Height:          astilectron.PtrInt(700),
+				Width:           astilectron.PtrInt(700),
+			},
+		}},
+	}); err != nil {
+		astilog.Fatal(errors.Wrap(err, "running bootstrap failed"))
+	}
 }

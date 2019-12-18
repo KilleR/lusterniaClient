@@ -32,13 +32,15 @@ export class Astilectron {
   private _messages: ReplaySubject<any> = new ReplaySubject(10);
 
   // messages seen before subscription.
-  get messages(): Observable<any> {
+  get messages(): Observable<{ name: string; payload: any }> {
     return this._messages.asObservable();
   }
 
   // matching result.
-  public send(message: string): Observable<string> {
-    this.log('doing send', message);
+  public send(name: string, payload: string): Observable<string> {
+    const jsonMsg = JSON.stringify({name, payload});
+    console.log('doing send', jsonMsg);
+    this.log('doing send', jsonMsg);
     // Return error if not ready yet
     if (this._isReady.value === false) {
       const s = new Subject<string>();
@@ -47,7 +49,7 @@ export class Astilectron {
     }
 
     const sub = new Subject<string>();
-    astilectron.sendMessage(message, response => {
+    astilectron.sendMessage({name, payload}, response => {
       sub.next(response);
     });
 
@@ -72,7 +74,7 @@ export class Astilectron {
   }
 
   private log(...rest) {
-    // console.log('[astilectron]', ...rest);
+    console.log('[astilectron]', ...rest);
   }
 
   // send sends an message to backend. Returns an observable that will contain

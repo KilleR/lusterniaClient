@@ -21,9 +21,9 @@ type messageMain struct {
 }
 
 var (
-	loginPass string
-	//ServerAddr = "lus.ndguarino.com:9876"
-	ServerAddr = "lusternia.com:23"
+	loginPass  string
+	ServerAddr = "lus.ndguarino.com:9876"
+	//ServerAddr = "lusternia.com:23"
 	AstiClient *astilectron.Astilectron
 	AstiWindow *astilectron.Window
 	terminate  chan bool
@@ -35,7 +35,6 @@ func init() {
 }
 
 func main() {
-	bootstrapAstilectron()
 
-	return
+	bootstrapAstilectron()
 }

@@ -1,2 +1,8 @@
 .idea
 bin
+
+#astilectron build files
+output
+resources/app
+bind_windows_amd64.go
+windows.syso

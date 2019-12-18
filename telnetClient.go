@@ -129,16 +129,16 @@ func doCustomTelnet(send chan string) (conn *telnet.Telnet) {
 
 			ansiToHtml(outbuff)
 
-			var outputMessage messageMain
-			outputMessage.Type = "main"
-			outputMessage.Content = string(outbuff)
-			outBytes, err := json.MarshalIndent(outputMessage, "", "  ")
-			if err != nil {
-				log.Println(err)
-				return
-			}
-			outBytes = bytes.ReplaceAll(outBytes, []byte(`\r`), []byte(``))
-			send <- string(outBytes)
+			//var outputMessage messageMain
+			//outputMessage.Type = "main"
+			//outputMessage.Content = string(outbuff)
+			//outBytes, err := json.MarshalIndent(outputMessage, "", "  ")
+			//if err != nil {
+			//	log.Println(err)
+			//	return
+			//}
+			//outBytes = bytes.ReplaceAll(outBytes, []byte(`\r`), []byte(``))
+			send <- string(outbuff)
 
 			outbuff = []byte{}
 			break

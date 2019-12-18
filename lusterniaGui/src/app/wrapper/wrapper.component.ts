@@ -4,6 +4,7 @@ import * as Convert from 'ansi-to-html';
 import {DomSanitizer} from '@angular/platform-browser';
 import {FormBuilder, FormGroup} from '@angular/forms';
 import {filter, map, share, tap} from 'rxjs/operators';
+import {throwError} from 'rxjs';
 
 @Component({
   selector: 'app-wrapper',
@@ -44,21 +45,28 @@ export class WrapperComponent implements OnInit {
 
   @HostListener('window:keydown') keydown() {
     console.log('keydown');
-    console.log(this.prompt.nativeElement);
     this.prompt.nativeElement.focus();
   }
 
   ngOnInit() {
     const messages$ = this.asti.messages.pipe(
-      map(msg => JSON.parse(msg)),
-      // tap(msg => console.log(msg)),
+      // map(msg => {
+      //
+      //   try {
+      //     return JSON.parse(msg.payload);
+      //   } catch (e) {
+      //     console.error('Unable to parse JSON', msg);
+      //     return throwError('JSON parse failure');
+      //   }
+      // }),
       share());
-    const content$ = messages$.pipe(filter(msg => msg.type === 'main'));
-    const gmcp$ = messages$.pipe(filter(msg => msg.type === 'GMCP'));
+    const content$ = messages$.pipe(filter(msg => msg.name === 'main'));
+    const gmcp$ = messages$.pipe(filter(msg => msg.name === 'GMCP'));
 
     content$.subscribe(content => {
-      const htmlContent = this.sanitizer.bypassSecurityTrustHtml(this.convert.toHtml(content.content));
-      if (content.type === 'main') {
+      console.log(content);
+      const htmlContent = this.sanitizer.bypassSecurityTrustHtml(this.convert.toHtml(content.payload));
+      if (content.name === 'main') {
         this.messages.push(htmlContent);
         this.cdr.detectChanges();
         this.mainPane.nativeElement.scrollTop = this.mainPane.nativeElement.scrollHeight;
@@ -79,7 +87,7 @@ export class WrapperComponent implements OnInit {
 
   sendToAsti(msg: string) {
     console.log('send:', msg);
-    this.asti.send(msg).subscribe(res => {
+    this.asti.send('command', msg).subscribe(res => {
       console.log('response from Asti:', res);
     });
   }
