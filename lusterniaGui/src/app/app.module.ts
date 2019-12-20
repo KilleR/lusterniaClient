@@ -9,6 +9,8 @@ import {MatInputModule, MatSliderModule, MatToolbarModule} from '@angular/materi
 import {AstilectronModule} from './astilectron';
 import {ReactiveFormsModule} from '@angular/forms';
 import { VitalsComponent } from './vitals/vitals.component';
+import { IndicatorComponent } from './common/indicator/indicator.component';
+import {CommonComponentsModule} from './common/common.module';
 
 const routes: Route[] = [
   {
@@ -31,6 +33,7 @@ const routes: Route[] = [
     MatSliderModule,
     MatToolbarModule,
     ReactiveFormsModule,
+    CommonComponentsModule,
     MatInputModule
   ],
   providers: [],
