@@ -4,6 +4,7 @@ import (
 	"github.com/asticode/go-astilectron"
 	bootstrap "github.com/asticode/go-astilectron-bootstrap"
 	"os"
+	"time"
 )
 
 type GMCPRequest struct {
@@ -42,4 +43,6 @@ func init() {
 func main() {
 
 	bootstrapAstilectron()
+
+	<-time.After(time.Second)
 }
