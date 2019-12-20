@@ -1,10 +1,10 @@
 import {ChangeDetectorRef, Component, ElementRef, HostListener, OnInit, ViewChild} from '@angular/core';
 import {Astilectron} from '../astilectron';
 import * as Convert from 'ansi-to-html';
-import {DomSanitizer} from '@angular/platform-browser';
+import {DomSanitizer, SafeHtml} from '@angular/platform-browser';
 import {FormBuilder, FormGroup} from '@angular/forms';
-import {filter, map, share, tap} from 'rxjs/operators';
-import {throwError} from 'rxjs';
+import {filter, share, tap} from 'rxjs/operators';
+import {Vitals} from '../gmcp/vitals';
 
 @Component({
   selector: 'app-wrapper',
@@ -14,6 +14,8 @@ import {throwError} from 'rxjs';
 export class WrapperComponent implements OnInit {
   messages = [];
   convert: any;
+
+  vitals: Vitals = new Vitals();
 
   form: FormGroup;
 
@@ -26,7 +28,26 @@ export class WrapperComponent implements OnInit {
       bg: '#000',
       newline: false,
       escapeXML: false,
-      stream: true
+      stream: true,
+      colors: {
+        0: '#000000',
+        1: '#800000',
+        2: '#00b300',
+        3: '#808000',
+        4: '#0000a0',
+        5: '#800080',
+        6: '#008080',
+        7: '#aaaaaa',
+
+        8: '#464646',
+        9: '#ff0000',
+        10: '#00ff00',
+        11: '#ffff00',
+        12: '#0000ff',
+        13: '#ff00ff',
+        14: '#00ffff',
+        15: '#ffffff',
+      }
     });
     this.form = _fb.group({
       prompt: [''],
@@ -51,32 +72,26 @@ export class WrapperComponent implements OnInit {
   ngOnInit() {
     const messages$ = this.asti.messages.pipe(
       tap(msg => console.log('raw asti:', msg)),
-      // map(msg => {
-      //
-      //   try {
-      //     return JSON.parse(msg.payload);
-      //   } catch (e) {
-      //     console.error('Unable to parse JSON', msg);
-      //     return throwError('JSON parse failure');
-      //   }
-      // }),
       share());
     const content$ = messages$.pipe(filter(msg => msg.name === 'telnet.content'));
-    const gmcp$ = messages$.pipe(filter(msg => msg.name === 'GMCP'));
+    const gmcp$ = messages$.pipe(filter(msg => msg.name.startsWith('GMCP.')));
 
     content$.subscribe(content => {
-      console.log(content);
       const htmlContent = this.sanitizer.bypassSecurityTrustHtml(this.convert.toHtml(content.payload));
       if (content.name === 'telnet.content') {
-        this.messages.push(htmlContent);
-        this.cdr.detectChanges();
-        this.mainPane.nativeElement.scrollTop = this.mainPane.nativeElement.scrollHeight;
+        this.writeToScreen(htmlContent);
       }
     });
 
     gmcp$.subscribe(msg => {
-      console.log(msg);
+      this.handleGMCP(msg.name, msg.payload);
     });
+  }
+
+  writeToScreen(text: SafeHtml) {
+    this.messages.push(text);
+    this.cdr.detectChanges();
+    this.mainPane.nativeElement.scrollTop = this.mainPane.nativeElement.scrollHeight;
   }
 
   handlePromptSubmit() {
@@ -98,6 +113,45 @@ export class WrapperComponent implements OnInit {
       event.preventDefault();
       this.handlePromptSubmit();
     }
+  }
+
+  handleGMCP(method: string, content: string) {
+    console.log('GOT GMCP:', method, content);
+    const gmcpMethodPath = method.split('.');
+    console.log('mehtod path', gmcpMethodPath);
+    switch (gmcpMethodPath[1]) {
+      case 'Core':
+        if (gmcpMethodPath.length < 2 || !gmcpMethodPath[1]) {
+          this.GMCPError(method, content);
+          return;
+        }
+        switch (gmcpMethodPath[2]) {
+          case 'Goodbye':
+            console.log('GOODBYE!');
+            // TODO: route to login
+            setTimeout(window.close, 2000)
+            break;
+          default:
+            console.log('[GMCP] Unknown Core Method:', method);
+        }
+        break;
+      case 'Char':
+        switch (gmcpMethodPath[2]) {
+          case 'Vitals':
+            this.vitals = Vitals.fromJsonString(content);
+            console.log('new vitals:', this.vitals);
+            break;
+          default:
+            console.log('[GMCP] Unknown Char Method:', method);
+        }
+        break;
+      default:
+        console.log('[GMCP] Unknown Method:', method);
+    }
+  }
+
+  GMCPError(method: string, content: string) {
+    console.error('[GMCP] Failed to parse:');
   }
 
 }

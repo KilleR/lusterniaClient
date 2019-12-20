@@ -8,6 +8,7 @@ import { WrapperComponent } from './wrapper/wrapper.component';
 import {MatInputModule, MatSliderModule, MatToolbarModule} from '@angular/material';
 import {AstilectronModule} from './astilectron';
 import {ReactiveFormsModule} from '@angular/forms';
+import { VitalsComponent } from './vitals/vitals.component';
 
 const routes: Route[] = [
   {
@@ -19,7 +20,8 @@ const routes: Route[] = [
 @NgModule({
   declarations: [
     AppComponent,
-    WrapperComponent
+    WrapperComponent,
+    VitalsComponent
   ],
   imports: [
     BrowserModule,

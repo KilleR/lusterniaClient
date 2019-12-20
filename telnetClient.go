@@ -109,15 +109,10 @@ func doCustomTelnet(send chan string) (conn *telnet.Telnet) {
 			gmcp.Type = "GMCP"
 			gmcp.Method = matches[1]
 			json.Unmarshal([]byte(matches[2]), &gmcp.Data)
-			if gmcp.Method == "Core.Goodbye" {
-				log.Println("GOODBYE")
-				<-time.After(time.Second * 2)
-				terminate <- true
-			}
 			JSON, _ := json.MarshalIndent(gmcp, "", "  ")
 			log.Println(string(JSON))
 			toAstiWindow <- bootstrap.MessageOut{
-				Name:    matches[1],
+				Name:    "GMCP." + matches[1],
 				Payload: matches[2],
 			}
 			//AstiWindow.SendMessage(string(JSON))
