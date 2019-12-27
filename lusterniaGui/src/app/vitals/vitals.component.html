@@ -1,1 +1,17 @@
-<p>{{vitals.hp}} / {{vitals.maxhp}} ({{vitals.hp/vitals.maxhp | percent}})</p>
+
+<mat-expansion-panel [expanded]="true">
+  <mat-expansion-panel-header>Vitals</mat-expansion-panel-header>
+  <app-indicator *ngFor="let vital of vitalsToShow"
+                 [label]="vital.name | uppercase"
+                 [current]="vitals[vital.name]"
+                 [max]="vitals['max'+vital.name]"
+                 [color]="vital.colour"></app-indicator>
+</mat-expansion-panel>
+<mat-expansion-panel [expanded]="true">
+  <mat-expansion-panel-header>Entities</mat-expansion-panel-header>
+  <app-indicator *ngFor="let vital of vitalsToShow"
+                 [label]="vital.name | uppercase"
+                 [current]="vitals[vital.name]"
+                 [max]="vitals['max'+vital.name]"
+                 [color]="vital.colour"></app-indicator>
+</mat-expansion-panel>

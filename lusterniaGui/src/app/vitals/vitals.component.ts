@@ -8,8 +8,15 @@ import {Vitals} from '../gmcp/vitals';
 })
 export class VitalsComponent implements OnInit {
   @Input() vitals: Vitals;
+  vitalsToShow = [
+    {name: 'hp', colour: 'red'},
+    {name: 'mana', colour: 'blue'},
+    {name: 'ego', colour: 'white'},
+    {name: 'pow', colour: 'purple'}
+  ];
 
-  constructor() { }
+  constructor() {
+  }
 
   ngOnInit() {
   }

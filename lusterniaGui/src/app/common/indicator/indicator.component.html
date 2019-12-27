@@ -1,1 +1,9 @@
-<p>indicator works!</p>
+<div class="indicator-bar">
+  <div class="indicator-fill"
+       [ngStyle]="{backgroundImage: 'linear-gradient('+color+', black)', width: current/max | percent}">
+
+  </div>
+  <div class="indicator-text">
+      {{label}}: {{current}} / {{max}} ({{current / max | percent}})
+  </div>
+</div>

@@ -5,6 +5,9 @@ import {IndicatorComponent} from './indicator/indicator.component';
 
 @NgModule({
   declarations: [IndicatorComponent],
+  exports: [
+    IndicatorComponent
+  ],
   imports: [
     CommonModule
   ]
