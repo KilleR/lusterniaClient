@@ -4,7 +4,8 @@ import * as Convert from 'ansi-to-html';
 import {DomSanitizer, SafeHtml} from '@angular/platform-browser';
 import {FormBuilder, FormGroup} from '@angular/forms';
 import {filter, share, tap} from 'rxjs/operators';
-import {Vitals} from '../gmcp/vitals';
+import {Entity, Player, Vitals} from '../gmcp';
+import {HistoryService} from '../services';
 
 @Component({
   selector: 'app-wrapper',
@@ -17,12 +18,23 @@ export class WrapperComponent implements OnInit {
 
   vitals: Vitals = new Vitals();
 
+  room: {
+    players: Player[],
+    entities: Entity[],
+  } = {
+    entities: [
+      {name: 'a test entity', attrib: 'm', icon: 'humanoid', id: '113'},
+      {name: 'a test entity', attrib: 'm', icon: 'humanoid', id: '114'},
+    ],
+    players: []
+  };
+
   form: FormGroup;
 
   @ViewChild('mainPane', {static: false}) mainPane: ElementRef;
   @ViewChild('prompt', {static: false}) prompt: ElementRef;
 
-  constructor(private cdr: ChangeDetectorRef, private asti: Astilectron, private sanitizer: DomSanitizer, private _fb: FormBuilder) {
+  constructor(private cdr: ChangeDetectorRef, private asti: Astilectron, private sanitizer: DomSanitizer, private fb: FormBuilder, private history: HistoryService) {
     this.convert = new Convert({
       fg: '#FFF',
       bg: '#000',
@@ -49,7 +61,7 @@ export class WrapperComponent implements OnInit {
         15: '#ffffff',
       }
     });
-    this.form = _fb.group({
+    this.form = fb.group({
       prompt: [''],
     });
   }
@@ -97,6 +109,7 @@ export class WrapperComponent implements OnInit {
   handlePromptSubmit() {
     const prompt = this.form.get('prompt');
     const message = prompt.value;
+    this.history.add(message);
     this.sendToAsti(message);
     prompt.setValue('');
   }
@@ -109,27 +122,37 @@ export class WrapperComponent implements OnInit {
   }
 
   promptKeyDown(event: KeyboardEvent) {
-    if (!event.shiftKey && event.key === 'Enter') {
-      event.preventDefault();
-      this.handlePromptSubmit();
+    switch(event.key) {
+      case 'Enter':
+        if (!event.shiftKey) {
+          event.preventDefault();
+          this.handlePromptSubmit();
+        }
+        break;
+      case 'ArrowUp':
+        console.log('Up Key');
+        this.form.get('prompt').setValue(this.history.prev());
+        break;
+      case 'ArrowDown':
+        this.form.get('prompt').setValue(this.history.next());
+        break;
     }
+    console.log(event.key);
   }
 
   handleGMCP(method: string, content: string) {
     console.log('GOT GMCP:', method, content);
     const gmcpMethodPath = method.split('.');
-    console.log('mehtod path', gmcpMethodPath);
+    console.log('method path', gmcpMethodPath);
     switch (gmcpMethodPath[1]) {
       case 'Core':
-        if (gmcpMethodPath.length < 2 || !gmcpMethodPath[1]) {
-          this.GMCPError(method, content);
-          return;
-        }
         switch (gmcpMethodPath[2]) {
           case 'Goodbye':
             console.log('GOODBYE!');
+            const htmlContent = this.sanitizer.bypassSecurityTrustHtml(this.convert.toHtml(content));
+            this.writeToScreen(htmlContent);
             // TODO: route to login
-            setTimeout(window.close, 2000)
+            setTimeout(window.close, 2000);
             break;
           default:
             console.log('[GMCP] Unknown Core Method:', method);
@@ -141,17 +164,31 @@ export class WrapperComponent implements OnInit {
             this.vitals = Vitals.fromJsonString(content);
             console.log('new vitals:', this.vitals);
             break;
+          case 'Items':
+            switch (gmcpMethodPath[3]) {
+              case 'List':
+                this.room.entities = Entity.fromJsonString(content);
+                break;
+              default:
+                console.log('[GMCP] Unknown Room.Items Method:', method);
+            }
+            break;
           default:
             console.log('[GMCP] Unknown Char Method:', method);
+        }
+        break;
+      case 'Room':
+        switch (gmcpMethodPath[2]) {
+          case 'Players':
+            this.room.players = Player.fromJsonString(content);
+            break;
+          default:
+            console.log('[GMCP] Unknown Room Method:', method);
         }
         break;
       default:
         console.log('[GMCP] Unknown Method:', method);
     }
-  }
-
-  GMCPError(method: string, content: string) {
-    console.error('[GMCP] Failed to parse:');
   }
 
 }

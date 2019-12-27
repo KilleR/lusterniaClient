@@ -1,17 +1,53 @@
+<mat-accordion [multi]="true" [displayMode]="'flat'">
+  <mat-expansion-panel [expanded]="true">
+    <mat-expansion-panel-header collapsedHeight="32px" expandedHeight="40px">
+      <mat-panel-title>Vitals</mat-panel-title>
+    </mat-expansion-panel-header>
 
-<mat-expansion-panel [expanded]="true">
-  <mat-expansion-panel-header>Vitals</mat-expansion-panel-header>
-  <app-indicator *ngFor="let vital of vitalsToShow"
-                 [label]="vital.name | uppercase"
-                 [current]="vitals[vital.name]"
-                 [max]="vitals['max'+vital.name]"
-                 [color]="vital.colour"></app-indicator>
-</mat-expansion-panel>
-<mat-expansion-panel [expanded]="true">
-  <mat-expansion-panel-header>Entities</mat-expansion-panel-header>
-  <app-indicator *ngFor="let vital of vitalsToShow"
-                 [label]="vital.name | uppercase"
-                 [current]="vitals[vital.name]"
-                 [max]="vitals['max'+vital.name]"
-                 [color]="vital.colour"></app-indicator>
-</mat-expansion-panel>
+    <app-indicator *ngFor="let vital of vitalsToShow"
+                   [label]="vital.name | uppercase"
+                   [current]="vitals[vital.name]"
+                   [max]="vitals['max'+vital.name]"
+                   [color]="vital.colour"></app-indicator>
+  </mat-expansion-panel>
+
+  <mat-expansion-panel [expanded]="true">
+    <mat-expansion-panel-header collapsedHeight="32px" expandedHeight="40px">
+      <mat-panel-title>Players</mat-panel-title>
+<!--      <mat-panel-description>({{players.length}})</mat-panel-description>-->
+    </mat-expansion-panel-header>
+
+    <ng-container *ngIf="players && players.length; else noPlayers">
+      <mat-chip *ngFor="let player of players">{{player.name}}</mat-chip>
+    </ng-container>
+    <ng-template #noPlayers>-</ng-template>
+  </mat-expansion-panel>
+
+  <mat-expansion-panel [expanded]="true">
+    <mat-expansion-panel-header collapsedHeight="32px" expandedHeight="40px">
+      <mat-panel-title>Monsters</mat-panel-title>
+<!--      <mat-panel-description>({{entities.length}})</mat-panel-description>-->
+    </mat-expansion-panel-header>
+
+    <ng-container *ngIf=" groupedMonsters && groupedMonsters.length; else noItems">
+      <mat-chip-list>
+        <mat-chip *ngFor="let monster of groupedMonsters">{{monster.name}} x{{monster.count}}</mat-chip>
+      </mat-chip-list>
+    </ng-container>
+    <ng-template #noItems>-</ng-template>
+  </mat-expansion-panel>
+
+  <mat-expansion-panel [expanded]="true">
+    <mat-expansion-panel-header collapsedHeight="32px" expandedHeight="40px">
+      <mat-panel-title>Items</mat-panel-title>
+<!--      <mat-panel-description>({{groupedItems.length}})</mat-panel-description>-->
+    </mat-expansion-panel-header>
+
+    <ng-container *ngIf="groupedItems && groupedItems.length; else noItems">
+      <mat-chip-list>
+        <mat-chip *ngFor="let item of groupedItems">{{item.name}} x{{item.count}}</mat-chip>
+      </mat-chip-list>
+    </ng-container>
+    <ng-template #noItems>-</ng-template>
+  </mat-expansion-panel>
+</mat-accordion>

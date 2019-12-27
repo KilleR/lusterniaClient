@@ -1,15 +1,14 @@
-import { BrowserModule } from '@angular/platform-browser';
-import { NgModule } from '@angular/core';
+import {BrowserModule} from '@angular/platform-browser';
+import {NgModule} from '@angular/core';
 
-import { AppComponent } from './app.component';
-import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
+import {AppComponent} from './app.component';
+import {BrowserAnimationsModule} from '@angular/platform-browser/animations';
 import {Route, RouterModule} from '@angular/router';
-import { WrapperComponent } from './wrapper/wrapper.component';
-import {MatExpansionModule, MatInputModule, MatSliderModule, MatToolbarModule} from '@angular/material';
+import {WrapperComponent} from './wrapper/wrapper.component';
+import {MatChipsModule, MatExpansionModule, MatInputModule, MatSliderModule, MatToolbarModule} from '@angular/material';
 import {AstilectronModule} from './astilectron';
 import {ReactiveFormsModule} from '@angular/forms';
-import { VitalsComponent } from './vitals/vitals.component';
-import { IndicatorComponent } from './common/indicator/indicator.component';
+import {VitalsComponent} from './vitals/vitals.component';
 import {CommonComponentsModule} from './common/common.module';
 
 const routes: Route[] = [
@@ -17,7 +16,7 @@ const routes: Route[] = [
     path: '',
     component: WrapperComponent,
   }
-]
+];
 
 @NgModule({
   declarations: [
@@ -35,9 +34,11 @@ const routes: Route[] = [
     ReactiveFormsModule,
     CommonComponentsModule,
     MatInputModule,
-    MatExpansionModule
+    MatExpansionModule,
+    MatChipsModule
   ],
   providers: [],
   bootstrap: [AppComponent]
 })
-export class AppModule { }
+export class AppModule {
+}

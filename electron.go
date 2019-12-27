@@ -71,7 +71,7 @@ func bootstrapAstilectron() {
 				{Role: astilectron.MenuItemRoleClose},
 			},
 		}},
-		OnWait: func(_ *astilectron.Astilectron, ws []*astilectron.Window, _ *astilectron.Menu, _ *astilectron.Tray, _ *astilectron.Menu) error {
+		OnWait: func(astiMain *astilectron.Astilectron, ws []*astilectron.Window, _ *astilectron.Menu, _ *astilectron.Tray, _ *astilectron.Menu) error {
 			w = ws[0]
 			go func() {
 				time.Sleep(5 * time.Second)
@@ -85,6 +85,9 @@ func bootstrapAstilectron() {
 				conn := doCustomTelnet(telnetOut)
 				for {
 					select {
+					case <- telnetClose:
+						conn.Close()
+						return
 					case msg := <-telnetOut:
 						if err := bootstrap.SendMessage(w, "telnet.content", msg); err != nil {
 							astilog.Error(errors.Wrap(err, "sending telnet content failed"))

@@ -29,6 +29,7 @@ var (
 	AstiClient   *astilectron.Astilectron
 	AstiWindow   *astilectron.Window
 	terminate    chan bool
+	telnetClose chan bool
 	toTelnet     chan string
 	toAstiWindow chan bootstrap.MessageOut
 )
@@ -36,6 +37,7 @@ var (
 func init() {
 	loginPass = os.Getenv("password")
 	terminate = make(chan bool)
+	telnetClose = make(chan bool)
 	toAstiWindow = make(chan bootstrap.MessageOut)
 	toTelnet = make(chan string)
 }
@@ -43,6 +45,8 @@ func init() {
 func main() {
 
 	bootstrapAstilectron()
+
+	telnetClose <- true
 
 	<-time.After(time.Second)
 }
