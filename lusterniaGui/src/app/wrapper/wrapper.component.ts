@@ -137,7 +137,6 @@ export class WrapperComponent implements OnInit {
         this.form.get('prompt').setValue(this.history.next());
         break;
     }
-    console.log(event.key);
   }
 
   handleGMCP(method: string, content: string) {

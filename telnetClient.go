@@ -5,11 +5,12 @@ import (
 	"encoding/json"
 	"fmt"
 	bootstrap "github.com/asticode/go-astilectron-bootstrap"
+	"io/ioutil"
 	"log"
 	"lusterniaClient/telnet"
 	"net"
-	"os"
 	"regexp"
+	"syscall"
 	"time"
 )
 
@@ -101,7 +102,6 @@ func doCustomTelnet(send chan string) (conn *telnet.Telnet) {
 	conn = telnet.NewTelnet(_conn)
 
 	conn.Listen(func(code telnet.TelnetCode, bytes []byte) {
-		log.Println("code:", telnet.CodeToString(code), string(bytes))
 		if code == telnet.GMCP {
 			rex := regexp.MustCompile(`^((?:[a-zA-Z]+\.?)+) (.+)$`)
 			matches := rex.FindStringSubmatch(string(bytes))
@@ -109,20 +109,20 @@ func doCustomTelnet(send chan string) (conn *telnet.Telnet) {
 			gmcp.Type = "GMCP"
 			gmcp.Method = matches[1]
 			json.Unmarshal([]byte(matches[2]), &gmcp.Data)
-			JSON, _ := json.MarshalIndent(gmcp, "", "  ")
-			log.Println(string(JSON))
+			if gmcp.Method == "IRE.FileStore.Content" {
+				handleFilestoreData(gmcp.Data)
+			}
 			toAstiWindow <- bootstrap.MessageOut{
 				Name:    "GMCP." + matches[1],
 				Payload: matches[2],
 			}
-			//AstiWindow.SendMessage(string(JSON))
 		}
 	})
 	conn.HandleIAC(func(inBytes []byte) {
 		log.Println("IAC:", telnet.ToString(inBytes))
 		switch telnet.ToString(inBytes) {
 		case telnet.ToString(telnet.BuildCommand(telnet.GA)):
-			_, err = os.Stdout.Write(outbuff)
+			//_, err = os.Stdout.Write(outbuff)
 			if err != nil {
 				fmt.Println("stdout write error:", err)
 			}
@@ -170,4 +170,14 @@ func doCustomTelnet(send chan string) (conn *telnet.Telnet) {
 	}()
 
 	return
+}
+
+func handleFilestoreData(raw interface{}) {
+	fmt.Println("have filestore data")
+	mapData := raw.(map[string]interface{})
+	rawZippedContent := mapData["text"].(string)
+	if len(rawZippedContent) <= 16 {
+		return
+	}
+	ioutil.WriteFile("filestore.txt", []byte(rawZippedContent), syscall.O_CREAT|syscall.O_TRUNC)
 }

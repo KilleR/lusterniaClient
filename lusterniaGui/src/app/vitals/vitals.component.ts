@@ -24,7 +24,7 @@ export class VitalsComponent implements OnInit {
   get groupedMonsters() {
     const grouped: { name: string; count: number }[] = [];
     this.entities.forEach(ent => {
-      if (!ent.attrib.includes('m')) {
+      if (!ent.attrib || !ent.attrib.includes('m')) {
         return;
       }
       const entName = ent.name;
@@ -44,7 +44,7 @@ export class VitalsComponent implements OnInit {
   get groupedItems() {
     const grouped: { name: string; count: number }[] = [];
     this.entities.forEach(ent => {
-      if (ent.attrib.includes('m')) {
+      if (ent.attrib && ent.attrib.includes('m')) {
         return;
       }
       const entName = ent.name;

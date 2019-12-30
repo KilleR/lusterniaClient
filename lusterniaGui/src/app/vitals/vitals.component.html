@@ -29,7 +29,7 @@
 <!--      <mat-panel-description>({{entities.length}})</mat-panel-description>-->
     </mat-expansion-panel-header>
 
-    <ng-container *ngIf=" groupedMonsters && groupedMonsters.length; else noItems">
+    <ng-container *ngIf="groupedMonsters && groupedMonsters.length; else noItems">
       <mat-chip-list>
         <mat-chip *ngFor="let monster of groupedMonsters">{{monster.name}} x{{monster.count}}</mat-chip>
       </mat-chip-list>

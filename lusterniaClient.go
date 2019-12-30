@@ -3,6 +3,8 @@ package main
 import (
 	"github.com/asticode/go-astilectron"
 	bootstrap "github.com/asticode/go-astilectron-bootstrap"
+	"io/ioutil"
+	"log"
 	"os"
 	"time"
 )
@@ -29,7 +31,7 @@ var (
 	AstiClient   *astilectron.Astilectron
 	AstiWindow   *astilectron.Window
 	terminate    chan bool
-	telnetClose chan bool
+	telnetClose  chan bool
 	toTelnet     chan string
 	toAstiWindow chan bootstrap.MessageOut
 )
@@ -44,6 +46,9 @@ func init() {
 
 func main() {
 
+	raw, _ := ioutil.ReadFile("filestore.txt")
+	log.Println(doFileStore(raw))
+	return
 	bootstrapAstilectron()
 
 	telnetClose <- true
