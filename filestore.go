@@ -9,6 +9,7 @@ import (
 	"io/ioutil"
 	"regexp"
 	"strconv"
+	"strings"
 )
 
 type reflexPackage struct {
@@ -70,13 +71,14 @@ func (fi *FlexInt) UnmarshalJSON(b []byte) error {
 }
 
 var (
-	clientVars     map[string]interface{}
-	clientReflexes reflexPackage
-	clientPackages []reflexPackage
+	nexusVars     map[string]interface{}
+	nexusReflexes reflexPackage
+	nexusPackages []reflexPackage
+	keybinds      []reflex
 )
 
 func init() {
-	clientVars = make(map[string]interface{})
+	nexusVars = make(map[string]interface{})
 }
 
 func doFileStore(raw []byte) (err error) {
@@ -97,7 +99,7 @@ func doFileStore(raw []byte) (err error) {
 	varsRex := regexp.MustCompile("client.vars = (.*)")
 	varsMatches := varsRex.FindSubmatch(unzipped)
 	varsObj := bytes.Trim(varsMatches[1], ";")
-	err = json.Unmarshal(varsObj, &clientVars)
+	err = json.Unmarshal(varsObj, &nexusVars)
 	fmt.Println(string(varsObj))
 	if err != nil {
 		return
@@ -106,7 +108,7 @@ func doFileStore(raw []byte) (err error) {
 	reflexesRex := regexp.MustCompile("client.reflexes = (.*)")
 	reflexesMatches := reflexesRex.FindSubmatch(unzipped)
 	reflexesObj := bytes.Trim(reflexesMatches[1], ";")
-	err = json.Unmarshal(reflexesObj, &clientReflexes)
+	err = json.Unmarshal(reflexesObj, &nexusReflexes)
 	fmt.Println(string(reflexesObj))
 	if err != nil {
 		return
@@ -115,17 +117,17 @@ func doFileStore(raw []byte) (err error) {
 	packagesRex := regexp.MustCompile("client.packages = (.*)")
 	packagesMatches := packagesRex.FindSubmatch(unzipped)
 	packagesObj := bytes.Trim(packagesMatches[1], ";")
-	err = json.Unmarshal(packagesObj, &clientPackages)
+	err = json.Unmarshal(packagesObj, &nexusPackages)
 	fmt.Println(string(packagesObj))
 	if err != nil {
 		return
 	}
 
-	clientPackages = append(clientPackages, clientReflexes)
+	nexusPackages = append(nexusPackages, nexusReflexes)
 
 	workingReflexes := 0
 	totalReflexes := 0
-	for _, pkg := range clientPackages {
+	for _, pkg := range nexusPackages {
 	reflexLoop:
 		for _, reflex := range pkg.Items {
 			totalReflexes++
@@ -138,13 +140,35 @@ func doFileStore(raw []byte) (err error) {
 					case "command":
 						//fmt.Println("command", action.Action)
 						break
+					case "wait":
+						break
 					default:
 						//fmt.Println("["+pkg.Name+"] Cannot handle reflex:", reflex.Type, reflex.Name, "contains action:", action.Action)
 						continue reflexLoop
 					}
 				}
 				workingReflexes++
-				fmt.Println("Working reflex:", reflex.Id, reflex.Name, reflex.Key)
+				fmt.Println("Working reflex:", reflex.Id, reflex.Name, reflex.Key, reflex.Actions)
+				keybinds = append(keybinds, reflex)
+				break
+			case "alias":
+				if strings.ContainsAny(reflex.Text, "<>") {
+					break
+				}
+				for _, action := range reflex.Actions {
+					switch action.Action {
+					case "command":
+						//fmt.Println("command", action.Action)
+						break
+					case "wait":
+						break
+					default:
+						//fmt.Println("["+pkg.Name+"] Cannot handle reflex:", reflex.Type, reflex.Name, "contains action:", action.Action)
+						continue reflexLoop
+					}
+				}
+				workingReflexes++
+				fmt.Println("Working reflex:", reflex.Id, reflex.Name, reflex.Key, reflex.Actions)
 				break
 			default:
 				//fmt.Println("Cannot handle reflex of type:", reflex.Type)
@@ -154,6 +178,9 @@ func doFileStore(raw []byte) (err error) {
 	}
 
 	fmt.Println("working reflexes:", workingReflexes, "of", totalReflexes)
+
+	jsonKeybinds, _ := json.MarshalIndent(keybinds, "", "  ")
+	fmt.Println(string(jsonKeybinds))
 
 	return
 }
