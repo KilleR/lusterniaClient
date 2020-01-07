@@ -1,4 +1,4 @@
-import {ChangeDetectorRef, Component, ElementRef, HostListener, OnInit, ViewChild} from '@angular/core';
+import {Component, ElementRef, HostListener, OnInit, ViewChild} from '@angular/core';
 import {Astilectron} from '../astilectron';
 import * as Convert from 'ansi-to-html';
 import {DomSanitizer, SafeHtml} from '@angular/platform-browser';
@@ -6,7 +6,25 @@ import {FormBuilder, FormGroup} from '@angular/forms';
 import {filter, pluck, share, tap} from 'rxjs/operators';
 import {Entity, Player, Vitals} from '../gmcp';
 import {HistoryService} from '../services';
-import {BehaviorSubject, timer} from 'rxjs';
+import {BehaviorSubject} from 'rxjs';
+
+class Keybind {
+  id: number;
+  key: number;
+  alt: boolean;
+  ctrl: boolean;
+  shift: boolean;
+
+  static fromAsti(input: any) {
+    const out = new Keybind();
+    out.id = input.id;
+    out.key = input.key;
+    out.alt = input.key_alt;
+    out.ctrl = input.key_ctrl;
+    out.shift = input.key_shift;
+    return out;
+  }
+}
 
 @Component({
   selector: 'app-wrapper',
@@ -17,6 +35,7 @@ export class WrapperComponent implements OnInit {
   messages = [];
   convert: any;
   messages$: BehaviorSubject<SafeHtml[]>;
+  keybinds: Keybind[] = [];
 
   vitals: Vitals = new Vitals();
 
@@ -73,8 +92,11 @@ export class WrapperComponent implements OnInit {
   }
 
   @HostListener('window:keydown', ['$event']) keydown(event: KeyboardEvent) {
-    console.log(event.key);
-    if (['Control', 'Shift'].includes(event.key)) {
+    console.log(event);
+    if (['Control', 'Shift', 'Alt', 'AltGraph', 'ContextMenu', 'Meta'].includes(event.key)) {
+      return;
+    }
+    if (this.checkKeybinds(event)) {
       return;
     }
     this.prompt.nativeElement.focus();
@@ -105,6 +127,7 @@ export class WrapperComponent implements OnInit {
       console.log('got keybinds');
       keybinds.forEach(keybind => {
         console.log('keybind:', keybind);
+        this.keybinds.push(Keybind.fromAsti(keybind));
       });
     });
   }
@@ -129,7 +152,22 @@ export class WrapperComponent implements OnInit {
     });
   }
 
+  checkKeybinds(event: KeyboardEvent): boolean {
+    this.keybinds.forEach(keybind => {
+      if (keybind.alt === event.altKey && keybind.ctrl === event.ctrlKey && keybind.shift === event.shiftKey && keybind.key === event.which) {
+        console.log('Keybind match!');
+        event.stopPropagation();
+        event.preventDefault();
+        return true;
+      }
+    });
+    return false;
+  }
+
   promptKeyDown(event: KeyboardEvent) {
+    if (this.checkKeybinds(event)) {
+      return;
+    }
     switch (event.key) {
       case 'Enter':
         if (!event.shiftKey) {
