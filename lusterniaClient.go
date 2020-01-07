@@ -3,7 +3,6 @@ package main
 import (
 	"github.com/asticode/go-astilectron"
 	bootstrap "github.com/asticode/go-astilectron-bootstrap"
-	"io/ioutil"
 	"log"
 	"os"
 	"time"
@@ -46,9 +45,11 @@ func init() {
 
 func main() {
 
-	raw, _ := ioutil.ReadFile("filestore.txt")
-	log.Println(doFileStore(raw))
-	return
+	go func() {
+		<-time.After(time.Second*5)
+		//raw, _ := ioutil.ReadFile("filestore.txt")
+		log.Println(doFileStore([]byte(filestore)))
+	}()
 	bootstrapAstilectron()
 
 	telnetClose <- true

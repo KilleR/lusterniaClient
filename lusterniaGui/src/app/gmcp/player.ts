@@ -5,14 +5,14 @@ export class Player {
   static fromJsonString(input: string): Player[] {
     const out = [];
     const jsonInput = JSON.parse(input);
-    console.log('JSON input (players):', jsonInput);
+    // console.log('JSON input (players):', jsonInput);
 
     for (const line of jsonInput) {
       const p = new Player();
 
 
       for (const key of Object.keys(line)) {
-        console.log('doing player key:', key, line[key]);
+        // console.log('doing player key:', key, line[key]);
         if (!line.hasOwnProperty(key)) {
           continue;
         }

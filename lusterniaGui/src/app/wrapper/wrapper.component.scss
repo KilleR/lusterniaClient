@@ -9,14 +9,16 @@
     "input input";
 }
 
+#prompt {
+  caret-color: inherit;
+}
+
 .main-header {
   grid-area: header;
 }
 
 .main-content {
   grid-area: main;
-  overflow: auto;
-  overflow-x: hidden;
 }
 
 .main-input {

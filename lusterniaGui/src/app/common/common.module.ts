@@ -1,12 +1,14 @@
 import {NgModule} from '@angular/core';
 import {CommonModule} from '@angular/common';
 import {IndicatorComponent} from './indicator/indicator.component';
+import { MessageContainerComponent } from './message-container/message-container.component';
 
 
 @NgModule({
-  declarations: [IndicatorComponent],
+  declarations: [IndicatorComponent, MessageContainerComponent],
   exports: [
-    IndicatorComponent
+    IndicatorComponent,
+    MessageContainerComponent
   ],
   imports: [
     CommonModule

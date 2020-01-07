@@ -3,9 +3,10 @@ import {Astilectron} from '../astilectron';
 import * as Convert from 'ansi-to-html';
 import {DomSanitizer, SafeHtml} from '@angular/platform-browser';
 import {FormBuilder, FormGroup} from '@angular/forms';
-import {filter, share, tap} from 'rxjs/operators';
+import {filter, pluck, share, tap} from 'rxjs/operators';
 import {Entity, Player, Vitals} from '../gmcp';
 import {HistoryService} from '../services';
+import {BehaviorSubject, timer} from 'rxjs';
 
 @Component({
   selector: 'app-wrapper',
@@ -15,6 +16,7 @@ import {HistoryService} from '../services';
 export class WrapperComponent implements OnInit {
   messages = [];
   convert: any;
+  messages$: BehaviorSubject<SafeHtml[]>;
 
   vitals: Vitals = new Vitals();
 
@@ -31,10 +33,14 @@ export class WrapperComponent implements OnInit {
 
   form: FormGroup;
 
-  @ViewChild('mainPane', {static: false}) mainPane: ElementRef;
   @ViewChild('prompt', {static: false}) prompt: ElementRef;
 
-  constructor(private cdr: ChangeDetectorRef, private asti: Astilectron, private sanitizer: DomSanitizer, private fb: FormBuilder, private history: HistoryService) {
+  constructor(
+    private asti: Astilectron,
+    private sanitizer: DomSanitizer,
+    private fb: FormBuilder,
+    private history: HistoryService
+  ) {
     this.convert = new Convert({
       fg: '#FFF',
       bg: '#000',
@@ -66,22 +72,17 @@ export class WrapperComponent implements OnInit {
     });
   }
 
-  // @HostListener('mouseup') mouseUp() {
-  //   console.log('Mouse Up event');
-  //   this.prompt.nativeElement.focus();
-  // }
-  //
-  // @HostListener('click') click() {
-  //   console.log('Click event');
-  //   this.prompt.nativeElement.focus();
-  // }
-
-  @HostListener('window:keydown') keydown() {
-    console.log('keydown');
+  @HostListener('window:keydown', ['$event']) keydown(event: KeyboardEvent) {
+    console.log(event.key);
+    if (['Control', 'Shift'].includes(event.key)) {
+      return;
+    }
     this.prompt.nativeElement.focus();
   }
 
   ngOnInit() {
+    this.messages$ = new BehaviorSubject<SafeHtml[]>([]);
+
     const messages$ = this.asti.messages.pipe(
       tap(msg => console.log('raw asti:', msg)),
       share());
@@ -98,12 +99,19 @@ export class WrapperComponent implements OnInit {
     gmcp$.subscribe(msg => {
       this.handleGMCP(msg.name, msg.payload);
     });
+
+    // keybinds pushed from FileStore handler
+    messages$.pipe(filter(msg => msg.name === 'keybinds'), pluck('payload')).subscribe(keybinds => {
+      console.log('got keybinds');
+      keybinds.forEach(keybind => {
+        console.log('keybind:', keybind);
+      });
+    });
   }
 
   writeToScreen(text: SafeHtml) {
     this.messages.push(text);
-    this.cdr.detectChanges();
-    this.mainPane.nativeElement.scrollTop = this.mainPane.nativeElement.scrollHeight;
+    this.messages$.next([...this.messages]);
   }
 
   handlePromptSubmit() {
@@ -122,7 +130,7 @@ export class WrapperComponent implements OnInit {
   }
 
   promptKeyDown(event: KeyboardEvent) {
-    switch(event.key) {
+    switch (event.key) {
       case 'Enter':
         if (!event.shiftKey) {
           event.preventDefault();

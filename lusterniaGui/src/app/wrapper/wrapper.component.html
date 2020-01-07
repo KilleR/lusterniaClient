@@ -3,14 +3,16 @@
     Lusternia Client
   </mat-toolbar>
 
-  <div #mainPane class="main-content">
-    <p *ngFor="let message of messages" style="white-space: pre-wrap" [innerHTML]="message"></p>
+  <div class="main-content" style="position: relative">
+    <app-message-container class="main-content" [content]="messages$ | async" [hasContent]="!!(messages$ | async)"></app-message-container>
   </div>
 
   <div class="main-input">
     <form [formGroup]="form" (submit)="handlePromptSubmit()">
-      <mat-form-field style="width: 100%">
-        <textarea matInput cdkTextareaAutosize placeholder="-" formControlName="prompt" (keydown)="$event.stopPropagation();promptKeyDown($event)" #prompt></textarea>
+      <mat-form-field style="width: 100%" appearance="outline">
+        <mat-label>-</mat-label>
+        <textarea id="prompt" matInput cdkTextareaAutosize formControlName="prompt"
+                  (keydown)="$event.stopPropagation();promptKeyDown($event)" #prompt></textarea>
       </mat-form-field>
     </form>
   </div>

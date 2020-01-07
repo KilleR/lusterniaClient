@@ -7,14 +7,14 @@ export class Entity {
   static fromJsonString(input: string): Entity[] {
     const out = [];
     const jsonInput = JSON.parse(input);
-    console.log('JSON input (entities):', jsonInput);
+    // console.log('JSON input (entities):', jsonInput);
 
     for (const line of jsonInput.items) {
       const p = new Entity();
 
 
       for (const key of Object.keys(line)) {
-        console.log('doing entity key:', key, line[key]);
+        // console.log('doing entity key:', key, line[key]);
         if (!line.hasOwnProperty(key)) {
           continue;
         }
