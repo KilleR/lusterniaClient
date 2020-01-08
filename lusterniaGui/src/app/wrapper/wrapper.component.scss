@@ -25,6 +25,10 @@
   grid-area: input;
 }
 
+::ng-deep .mat-form-field-wrapper {
+  padding-bottom: 0;
+}
+
 .vitals {
   grid-area: vitals;
   overflow: auto;

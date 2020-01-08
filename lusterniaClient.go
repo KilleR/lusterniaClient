@@ -46,10 +46,12 @@ func init() {
 func main() {
 
 	go func() {
-		<-time.After(time.Second*5)
+		<-time.After(time.Second * 5)
 		//raw, _ := ioutil.ReadFile("filestore.txt")
 		log.Println(doFileStore([]byte(filestore)))
 	}()
+	//<-time.After(time.Second*10)
+	//return
 	bootstrapAstilectron()
 
 	telnetClose <- true

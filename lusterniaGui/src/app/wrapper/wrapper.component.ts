@@ -35,7 +35,15 @@ export class WrapperComponent implements OnInit {
   messages = [];
   convert: any;
   messages$: BehaviorSubject<SafeHtml[]>;
-  keybinds: Keybind[] = [];
+  keybinds: Keybind[] = [
+    {
+      id: 12,
+      key: 68,
+      shift: false,
+      ctrl: true,
+      alt: false,
+    }
+  ];
 
   vitals: Vitals = new Vitals();
 
@@ -43,10 +51,7 @@ export class WrapperComponent implements OnInit {
     players: Player[],
     entities: Entity[],
   } = {
-    entities: [
-      {name: 'a test entity', attrib: 'm', icon: 'humanoid', id: '113'},
-      {name: 'a test entity', attrib: 'm', icon: 'humanoid', id: '114'},
-    ],
+    entities: [],
     players: []
   };
 
@@ -145,23 +150,30 @@ export class WrapperComponent implements OnInit {
     prompt.setValue('');
   }
 
-  sendToAsti(msg: string) {
+  sendToAsti(msg: string, msgType = 'command') {
     console.log('send:', msg);
-    this.asti.send('command', msg).subscribe(res => {
+    this.asti.send(msgType, msg).subscribe(res => {
       console.log('response from Asti:', res);
     });
   }
 
   checkKeybinds(event: KeyboardEvent): boolean {
+    let keyMatch = false;
     this.keybinds.forEach(keybind => {
-      if (keybind.alt === event.altKey && keybind.ctrl === event.ctrlKey && keybind.shift === event.shiftKey && keybind.key === event.which) {
+      if (
+        keybind.alt === event.altKey &&
+        keybind.ctrl === event.ctrlKey &&
+        keybind.shift === event.shiftKey &&
+        keybind.key === event.which
+      ) {
         console.log('Keybind match!');
+        this.sendToAsti(keybind.id.toString(), 'keybind')
         event.stopPropagation();
         event.preventDefault();
-        return true;
+        keyMatch = true;
       }
     });
-    return false;
+    return keyMatch;
   }
 
   promptKeyDown(event: KeyboardEvent) {
