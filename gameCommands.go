@@ -133,6 +133,12 @@ func doActions(actions []reflexAction, tmpVars map[string]string) {
 				fmt.Println("Setting", action.VarName, "to", varValue)
 				nexusVars[action.VarName] = varValue
 			}
+		case "waitfor":
+			// TODO : properly handle waitfor
+			return
+		case "stop":
+			return
+
 		}
 	}
 }
