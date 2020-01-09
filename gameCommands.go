@@ -11,7 +11,8 @@ import (
 )
 
 var (
-	variableRex *regexp.Regexp
+	variableRex      *regexp.Regexp
+	messageListeners messageListener
 )
 
 func init() {
@@ -22,50 +23,49 @@ func processCommand(rawCommand string, commandVars map[string]string) (out []str
 	commands := strings.Split(rawCommand, ";")
 
 	for _, command := range commands {
-		matches := variableRex.FindAllStringSubmatch(command, -1)
-
-		for _, match := range matches {
-			var outVal string
-			varName := match[1]
-			commandVarVal, ok := commandVars[varName]
-			if !ok {
-				varVal, ok := nexusVars[varName]
-				if !ok {
-					outVal = ""
-				} else {
-					outVal, ok = varVal.(string)
-					if !ok {
-						outVal = ""
-					}
-				}
-			} else {
-				outVal = commandVarVal
-			}
-			command = strings.Replace(command, match[0], outVal, -1)
-		}
+		replaceVars(command, commandVars)
 		out = append(out, command)
 	}
 
 	return out
 }
 
+func replaceVars(in string, tmpVars map[string]string) string {
+	matches := variableRex.FindAllStringSubmatch(in, -1)
+
+	fmt.Println("Doing replacement:", in, tmpVars)
+	for _, match := range matches {
+		var outVal string
+		varName := match[1]
+		commandVarVal, ok := tmpVars[varName]
+		if !ok {
+			varVal, ok := nexusVars[varName]
+			if !ok {
+				outVal = ""
+			} else {
+				outVal, ok = varVal.(string)
+				if !ok {
+					outVal = ""
+				}
+			}
+		} else {
+			outVal = commandVarVal
+		}
+		in = strings.Replace(in, match[0], outVal, -1)
+	}
+	return in
+}
+
 func doAliases(command string) (out string) {
 	for _, alias := range aliases {
-		tmpVars := make(map[string]string)
-		matches := alias.rex.FindStringSubmatch(command)
-		if len(matches) > 0 {
-			fmt.Println("Running alias:", alias.Guid, alias.Text, alias.Actions)
-			for i, match := range matches[1:] {
-				fmt.Println("Matching:", i, match)
-				fmt.Println("Against:", alias.varKeys)
-				varKey := alias.varKeys[i]
-				tmpVars[varKey] = match
-			}
-
+		tmpVars := alias.match(command)
+		if tmpVars != nil {
+			fmt.Println("action:", alias.Actions, tmpVars)
 			doActions(alias.Actions, tmpVars)
 			return
 		}
 	}
+	fmt.Println("command to telnet:", command)
 	toTelnet <- command
 	return
 }
@@ -85,6 +85,7 @@ func doActions(actions []reflexAction, tmpVars map[string]string) {
 			}
 			time.Sleep(waitTime)
 		case "notify":
+			action.Notice = replaceVars(action.Notice, tmpVars)
 			toAstiWindow <- bootstrap.MessageOut{
 				Name:    "notify",
 				Payload: action,
@@ -111,7 +112,7 @@ func doActions(actions []reflexAction, tmpVars map[string]string) {
 			switch action.Op {
 			case "set":
 				fmt.Println("Setting", action.VarName, "to", varValue)
-				nexusVars[action.VarName] = action.Value
+				nexusVars[action.VarName] = varValue
 			}
 		}
 	}

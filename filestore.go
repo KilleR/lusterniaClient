@@ -55,16 +55,31 @@ type reflexAction struct {
 	Op           string  `json:"op"`
 }
 
-type alias struct {
-	reflex
+type matcher struct {
 	rex     *regexp.Regexp
 	varKeys []string
 }
 
+func (m matcher) match(in string) (tmpVars map[string]string) {
+	matches := m.rex.FindStringSubmatch(in)
+	if len(matches) > 0 {
+		tmpVars = make(map[string]string)
+		for i, match := range matches[1:] {
+			varKey := m.varKeys[i]
+			tmpVars[varKey] = match
+		}
+	}
+	return
+}
+
+type alias struct {
+	reflex
+	matcher
+}
+
 type trigger struct {
 	reflex
-	rex     *regexp.Regexp
-	varKeys []string
+	matcher
 }
 
 // A FlexInt is an int that can be unmarshalled from a JSON field
@@ -230,6 +245,7 @@ func isValidActionType(action reflexAction) bool {
 		default:
 			return false
 		}
+	case "waitfor":
 	default:
 		return false
 	}
@@ -262,7 +278,7 @@ func reflexToAlias(in reflex) (out alias, err error) {
 	}
 	rexString += aliasMatchRex.ReplaceAllString(in.Text, `([^ ]+)`)
 	if in.WholeWords {
-		rexString += " "
+		rexString += "(?: |$)"
 	}
 
 	out.rex, err = regexp.Compile(rexString)
