@@ -72,6 +72,25 @@ func (m matcher) match(in string) (tmpVars map[string]string) {
 	return
 }
 
+func (m matcher) replace(in string, repl string) (out string) {
+	out = m.rex.ReplaceAllString(in, repl)
+
+	return
+}
+
+func (m matcher) split(in string) (prefix string, suffix string) {
+	parts := m.rex.Split(in, 2)
+
+	switch len(parts) {
+	case 1:
+		return parts[0], ""
+	case 2:
+		return parts[0], parts[1]
+	default:
+		return "", ""
+	}
+}
+
 type alias struct {
 	reflex
 	matcher

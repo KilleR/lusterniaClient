@@ -61,6 +61,15 @@ func doAliases(command string) (out string) {
 		tmpVars := alias.match(command)
 		if tmpVars != nil {
 			fmt.Println("action:", alias.Actions, tmpVars)
+
+			if alias.PrefixSuffix {
+				prefix, suffix := alias.split(command)
+				tmpVars["prefix"] = prefix
+				tmpVars["suffix"] = suffix
+
+				fmt.Println(command, alias.rex, prefix, suffix)
+			}
+
 			doActions(alias.Actions, tmpVars)
 			return
 		}
@@ -75,7 +84,17 @@ func doActions(actions []reflexAction, tmpVars map[string]string) {
 		switch action.Action {
 		case "command", "":
 			for _, command := range processCommand(action.Command, tmpVars) {
-				toTelnet <- command
+				var fullCommand string
+				prefix, ok := tmpVars["prefix"]
+				if ok && prefix != "" {
+					fullCommand += prefix + " "
+				}
+				fullCommand += command
+				suffix, ok := tmpVars["suffix"]
+				if ok && suffix != "" {
+					fullCommand += " " + suffix
+				}
+				toTelnet <- fullCommand
 			}
 		case "wait":
 			waitTime, err := time.ParseDuration(fmt.Sprintf("%ds%dms", action.Seconds, action.Milliseconds))
