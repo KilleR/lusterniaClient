@@ -133,7 +133,6 @@ func doCustomTelnet(send chan string) (conn *telnet.Telnet) {
 			send <- string(outBytes)
 
 			outbuff = []byte{}
-			break
 		case telnet.ToString(telnet.BuildCommand(telnet.WILL, telnet.GMCP)):
 			conn.SendCommand(telnet.DO, telnet.GMCP)
 			conn.SendGMCP(`Core.Hello { "client": "Deathwish", "version": "0.0.1" }`)
@@ -141,13 +140,10 @@ func doCustomTelnet(send chan string) (conn *telnet.Telnet) {
 			go func() {
 				select {
 				case <-terminate:
-					break
 				case <-time.After(time.Second * 30):
 					conn.SendGMCP(`IRE.FileStore.Request {"request": "get html5-reflexes raw"}`)
 				}
 			}()
-			break
-
 		}
 	})
 

@@ -24,6 +24,7 @@ type reflexPackage struct {
 }
 
 type reflex struct {
+	Guid          string         `json:"guid"`
 	Type          string         `json:"type"`
 	Name          string         `json:"name"`
 	Enabled       bool           `json:"enabled"`
@@ -133,6 +134,7 @@ func doFileStore(raw []byte) (err error) {
 	for _, pkg := range nexusPackages {
 	reflexLoop:
 		for _, reflex := range pkg.Items {
+			reflex.Guid = pkg.Name + " - " + strconv.Itoa(reflex.Id)
 			totalReflexes++
 
 			switch reflex.Type {
@@ -173,11 +175,10 @@ func doFileStore(raw []byte) (err error) {
 		}
 	}
 
-	fmt.Println("working reflexes:", workingReflexes, "of", totalReflexes)
+	jsonOut, _ := json.MarshalIndent(nexusVars, "", "  ")
+	fmt.Println(string(jsonOut))
 
-	jsonKeybinds, _ := json.MarshalIndent(keybinds, "", "  ")
-	fmt.Println(string(jsonKeybinds))
-	fmt.Println(len(keybinds))
+	fmt.Println("working reflexes:", workingReflexes, "of", totalReflexes)
 
 	toAstiWindow <- bootstrap.MessageOut{Name: "keybinds", Payload: keybinds}
 

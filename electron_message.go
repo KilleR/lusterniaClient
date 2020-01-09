@@ -2,9 +2,9 @@ package main
 
 import (
 	"encoding/json"
+	"fmt"
 	"github.com/asticode/go-astilectron"
 	bootstrap "github.com/asticode/go-astilectron-bootstrap"
-	"strconv"
 )
 
 // handleMessages handles messages
@@ -38,23 +38,21 @@ func handleMessages(_ *astilectron.Window, m bootstrap.MessageIn) (payload inter
 		}
 	case "keybind":
 		var commandString string
-		var keybindId int
 		if len(m.Payload) > 0 {
 			// Unmarshal payload
 			if err = json.Unmarshal(m.Payload, &commandString); err != nil {
 				payload = err.Error()
 				return
 			}
-			keybindId, err = strconv.Atoi(commandString)
-			if err != nil {
-				return // @TODO: handle keybind errors
-			}
+			fmt.Println("Recieved keybind:", commandString)
 			for _, keybind := range keybinds {
-				if keybind.Id == keybindId {
+				if keybind.Guid == commandString {
 					for _, action := range keybind.Actions {
 						switch action.Action {
-						case "command":
-							toTelnet <- action.Command
+						case "command", "":
+							for _, command := range processCommand(action.Command) {
+								toTelnet <- command
+							}
 						}
 					}
 				}

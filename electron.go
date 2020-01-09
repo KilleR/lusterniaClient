@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
+	"github.com/asticode/go-astikit"
 	"github.com/asticode/go-astilectron"
 	bootstrap "github.com/asticode/go-astilectron-bootstrap"
 	"github.com/asticode/go-astilog"
@@ -47,12 +48,13 @@ func bootstrapAstilectron() {
 			VersionAstilectron: VersionAstilectron,
 			VersionElectron:    VersionElectron,
 		},
-		Debug: *debug,
+		Debug:  *debug,
+		Logger: astilog.GetLogger(),
 		MenuOptions: []*astilectron.MenuItemOptions{{
-			Label: astilectron.PtrStr("File"),
+			Label: astikit.StrPtr("File"),
 			SubMenu: []*astilectron.MenuItemOptions{
 				{
-					Label: astilectron.PtrStr("About"),
+					Label: astikit.StrPtr("About"),
 					OnClick: func(e astilectron.Event) (deleteListener bool) {
 						if err := bootstrap.SendMessage(w, "about", htmlAbout, func(m *bootstrap.MessageIn) {
 							// Unmarshal payload
@@ -85,7 +87,7 @@ func bootstrapAstilectron() {
 				conn := doCustomTelnet(telnetOut)
 				for {
 					select {
-					case <- telnetClose:
+					case <-telnetClose:
 						conn.Close()
 						return
 					case msg := <-telnetOut:
@@ -94,7 +96,7 @@ func bootstrapAstilectron() {
 						}
 						break
 					case msg := <-toTelnet:
-						fmt.Println("to telnet:", []byte(msg+"\n"))
+						fmt.Println("to telnet:", msg+"\n")
 						conn.Write([]byte(msg + "\n"))
 						break
 					}
@@ -116,10 +118,10 @@ func bootstrapAstilectron() {
 			Homepage:       "index.html",
 			MessageHandler: handleMessages,
 			Options: &astilectron.WindowOptions{
-				BackgroundColor: astilectron.PtrStr("#333"),
-				Center:          astilectron.PtrBool(true),
-				Height:          astilectron.PtrInt(900),
-				Width:           astilectron.PtrInt(1200),
+				BackgroundColor: astikit.StrPtr("#333"),
+				Center:          astikit.BoolPtr(true),
+				Height:          astikit.IntPtr(900),
+				Width:           astikit.IntPtr(1200),
 			},
 		}},
 	}); err != nil {

@@ -9,7 +9,7 @@ import {HistoryService} from '../services';
 import {BehaviorSubject} from 'rxjs';
 
 class Keybind {
-  id: number;
+  id: string;
   key: number;
   alt: boolean;
   ctrl: boolean;
@@ -17,7 +17,7 @@ class Keybind {
 
   static fromAsti(input: any) {
     const out = new Keybind();
-    out.id = input.id;
+    out.id = input.guid;
     out.key = input.key;
     out.alt = input.key_alt;
     out.ctrl = input.key_ctrl;
@@ -37,7 +37,7 @@ export class WrapperComponent implements OnInit {
   messages$: BehaviorSubject<SafeHtml[]>;
   keybinds: Keybind[] = [
     {
-      id: 12,
+      id: '1 - 12',
       key: 68,
       shift: false,
       ctrl: true,
@@ -167,7 +167,7 @@ export class WrapperComponent implements OnInit {
         keybind.key === event.which
       ) {
         console.log('Keybind match!');
-        this.sendToAsti(keybind.id.toString(), 'keybind')
+        this.sendToAsti(keybind.id, 'keybind');
         event.stopPropagation();
         event.preventDefault();
         keyMatch = true;
