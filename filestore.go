@@ -264,7 +264,6 @@ func isValidActionType(action reflexAction) bool {
 		default:
 			return false
 		}
-	case "waitfor":
 	default:
 		return false
 	}
