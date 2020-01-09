@@ -1,8 +1,12 @@
 package main
 
 import (
+	"fmt"
+	bootstrap "github.com/asticode/go-astilectron-bootstrap"
+	"github.com/asticode/go-astilog"
 	"regexp"
 	"strings"
+	"time"
 )
 
 func processCommand(rawCommand string) (out []string) {
@@ -30,4 +34,27 @@ func processCommand(rawCommand string) (out []string) {
 	}
 
 	return out
+}
+
+func doActions(actions []reflexAction) {
+	for _, action := range actions {
+		switch action.Action {
+		case "command", "":
+			for _, command := range processCommand(action.Command) {
+				toTelnet <- command
+			}
+		case "wait":
+			waitTime, err := time.ParseDuration(fmt.Sprintf("%ds%dms", action.Seconds, action.Milliseconds))
+			if err != nil {
+				astilog.Error(err)
+				continue
+			}
+			time.Sleep(waitTime)
+		case "notify":
+			toAstiWindow <- bootstrap.MessageOut{
+				Name:    "notify",
+				Payload: action,
+			}
+		}
+	}
 }

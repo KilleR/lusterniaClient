@@ -47,14 +47,7 @@ func handleMessages(_ *astilectron.Window, m bootstrap.MessageIn) (payload inter
 			fmt.Println("Recieved keybind:", commandString)
 			for _, keybind := range keybinds {
 				if keybind.Guid == commandString {
-					for _, action := range keybind.Actions {
-						switch action.Action {
-						case "command", "":
-							for _, command := range processCommand(action.Command) {
-								toTelnet <- command
-							}
-						}
-					}
+					doActions(keybind.Actions)
 				}
 			}
 		}

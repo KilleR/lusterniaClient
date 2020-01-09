@@ -42,11 +42,13 @@ type reflex struct {
 }
 
 type reflexAction struct {
-	Action   string `json:"action"`
-	Notice   string `json:"notice"`
-	NoticeFg string `json:"notice_fg"`
-	NoticeBg string `json:"notice_bg"`
-	Command  string `json:"command"`
+	Action       string  `json:"action"`
+	Notice       string  `json:"notice"`
+	NoticeFg     string  `json:"notice_fg"`
+	NoticeBg     string  `json:"notice_bg"`
+	Command      string  `json:"command"`
+	Seconds      FlexInt `json:"seconds"`
+	Milliseconds FlexInt `json:"milliseconds"`
 }
 
 // A FlexInt is an int that can be unmarshalled from a JSON field
@@ -68,7 +70,8 @@ func (fi *FlexInt) UnmarshalJSON(b []byte) error {
 	}
 	i, err := strconv.Atoi(s)
 	if err != nil {
-		return err
+		i = 0
+		//return err
 	}
 	*fi = FlexInt(i)
 	return nil
@@ -144,6 +147,7 @@ func doFileStore(raw []byte) (err error) {
 					case "command", "":
 						//fmt.Println("command", action.Command)
 					case "wait":
+					case "notify":
 					default:
 						//fmt.Println("["+pkg.Name+"] Cannot handle reflex:", reflex.Type, reflex.Name, "contains action:", action.Action)
 						continue reflexLoop
@@ -161,6 +165,7 @@ func doFileStore(raw []byte) (err error) {
 					case "command":
 						//fmt.Println("command", action.Action)
 					case "wait":
+					case "notify":
 					default:
 						//fmt.Println("["+pkg.Name+"] Cannot handle reflex:", reflex.Type, reflex.Name, "contains action:", action.Action)
 						continue reflexLoop
