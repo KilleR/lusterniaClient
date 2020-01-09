@@ -114,13 +114,20 @@ export class WrapperComponent implements OnInit {
       tap(msg => console.log('raw asti:', msg)),
       share());
     const content$ = messages$.pipe(filter(msg => msg.name === 'telnet.content'));
+    const notifications$ = messages$.pipe(filter(msg => msg.name === 'notify'));
     const gmcp$ = messages$.pipe(filter(msg => msg.name.startsWith('GMCP.')));
 
     content$.subscribe(content => {
       const htmlContent = this.sanitizer.bypassSecurityTrustHtml(this.convert.toHtml(content.payload));
-      if (content.name === 'telnet.content') {
-        this.writeToScreen(htmlContent);
-      }
+      this.writeToScreen(htmlContent);
+    });
+
+    notifications$.subscribe(notification => {
+      const htmlContent = this.sanitizer.bypassSecurityTrustHtml(
+        '<p style="color:' + notification.payload.notice_fg + '; background-color:' + notification.payload.notice_bg + '">' +
+        notification.payload.notice + '</p>'
+      );
+      this.writeToScreen(htmlContent);
     });
 
     gmcp$.subscribe(msg => {

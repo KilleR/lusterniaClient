@@ -91,9 +91,7 @@ func bootstrapAstilectron() {
 						conn.Close()
 						return
 					case msg := <-telnetOut:
-						if err := bootstrap.SendMessage(w, "telnet.content", msg); err != nil {
-							astilog.Error(errors.Wrap(err, "sending telnet content failed"))
-						}
+						handleInboundMessage(msg)
 						break
 					case msg := <-toTelnet:
 						fmt.Println("to telnet:", msg+"\n")

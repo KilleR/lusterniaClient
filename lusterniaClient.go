@@ -50,7 +50,9 @@ func main() {
 		//raw, _ := ioutil.ReadFile("filestore.txt")
 		log.Println(doFileStore([]byte(filestore)))
 	}()
+
 	//<-time.After(time.Second*6)
+	//doAliases(">>aslaran")
 	//return
 	bootstrapAstilectron()
 

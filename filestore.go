@@ -49,6 +49,22 @@ type reflexAction struct {
 	Command      string  `json:"command"`
 	Seconds      FlexInt `json:"seconds"`
 	Milliseconds FlexInt `json:"milliseconds"`
+	ValType      string  `json:"valtype"`
+	VarName      string  `json:"varname"`
+	Value        string  `json:"value"`
+	Op           string  `json:"op"`
+}
+
+type alias struct {
+	reflex
+	rex     *regexp.Regexp
+	varKeys []string
+}
+
+type trigger struct {
+	reflex
+	rex     *regexp.Regexp
+	varKeys []string
 }
 
 // A FlexInt is an int that can be unmarshalled from a JSON field
@@ -82,10 +98,14 @@ var (
 	nexusReflexes reflexPackage
 	nexusPackages []reflexPackage
 	keybinds      []reflex
+	aliases       []alias
+	triggers      []trigger
+	aliasMatchRex *regexp.Regexp
 )
 
 func init() {
 	nexusVars = make(map[string]interface{})
+	aliasMatchRex = regexp.MustCompile(`<[^ ]+>`)
 }
 
 func doFileStore(raw []byte) (err error) {
@@ -101,6 +121,8 @@ func doFileStore(raw []byte) (err error) {
 		return
 	}
 
+	//out, _:=os.OpenFile("package.txt", os.O_TRUNC|os.O_CREATE, 0644)
+	//out.Write(unzipped)
 	//fmt.Println(string(unzipped))
 
 	varsRex := regexp.MustCompile("client.vars = (.*)")
@@ -143,13 +165,7 @@ func doFileStore(raw []byte) (err error) {
 			switch reflex.Type {
 			case "keybind":
 				for _, action := range reflex.Actions {
-					switch action.Action {
-					case "command", "":
-						//fmt.Println("command", action.Command)
-					case "wait":
-					case "notify":
-					default:
-						//fmt.Println("["+pkg.Name+"] Cannot handle reflex:", reflex.Type, reflex.Name, "contains action:", action.Action)
+					if !isValidActionType(action) {
 						continue reflexLoop
 					}
 				}
@@ -157,22 +173,35 @@ func doFileStore(raw []byte) (err error) {
 				//fmt.Println("Working reflex:", reflex.Id, reflex.Name, reflex.Key, reflex.Actions)
 				keybinds = append(keybinds, reflex)
 			case "alias":
-				if strings.ContainsAny(reflex.Text, "<>") {
-					break
-				}
 				for _, action := range reflex.Actions {
-					switch action.Action {
-					case "command":
-						//fmt.Println("command", action.Action)
-					case "wait":
-					case "notify":
-					default:
-						//fmt.Println("["+pkg.Name+"] Cannot handle reflex:", reflex.Type, reflex.Name, "contains action:", action.Action)
+					if !isValidActionType(action) {
 						continue reflexLoop
 					}
 				}
+				alias, err := reflexToAlias(reflex)
+				if err != nil {
+					// TODO handle UI display of failed reflex conversion
+					fmt.Println("Failed to map alias:", err)
+					break
+				}
+				if alias.Text != "" {
+					aliases = append(aliases, alias)
+				}
 				workingReflexes++
-				//fmt.Println("Working reflex:", reflex.Id, reflex.Name, reflex.Key, reflex.Actions)
+			case "trigger":
+				for _, action := range reflex.Actions {
+					if !isValidActionType(action) {
+						continue reflexLoop
+					}
+				}
+				trigger, err := reflexToTrigger(reflex)
+				if err != nil {
+					// TODO handle UI display of failed reflex conversion
+					fmt.Println("Failed to map alias:", err)
+					break
+				}
+				triggers = append(triggers, trigger)
+				workingReflexes++
 			default:
 				//fmt.Println("Cannot handle reflex of type:", reflex.Type)
 				continue
@@ -180,12 +209,62 @@ func doFileStore(raw []byte) (err error) {
 		}
 	}
 
-	jsonOut, _ := json.MarshalIndent(nexusVars, "", "  ")
-	fmt.Println(string(jsonOut))
+	//jsonOut, _ := json.MarshalIndent(keybinds, "", "  ")
+	//fmt.Println(string(jsonOut))
 
 	fmt.Println("working reflexes:", workingReflexes, "of", totalReflexes)
 
 	toAstiWindow <- bootstrap.MessageOut{Name: "keybinds", Payload: keybinds}
 
+	return
+}
+
+func isValidActionType(action reflexAction) bool {
+	switch action.Action {
+	case "command", "":
+	case "wait":
+	case "notify":
+	case "variable":
+		switch action.Op {
+		case "set":
+		default:
+			return false
+		}
+	default:
+		return false
+	}
+	return true
+}
+
+func reflexToTrigger(in reflex) (out trigger, err error) {
+	out.reflex = in
+	var rexString string
+	if in.Matching == "begins" {
+		rexString += "^"
+	}
+	for _, key := range aliasMatchRex.FindAllString(in.Text, -1) {
+		out.varKeys = append(out.varKeys, strings.Trim(key, "<>"))
+	}
+	rexString += aliasMatchRex.ReplaceAllString(in.Text, `([^ ]+)`)
+
+	out.rex, err = regexp.Compile(rexString)
+	return
+}
+
+func reflexToAlias(in reflex) (out alias, err error) {
+	out.reflex = in
+	var rexString string
+	if in.Matching == "begins" {
+		rexString += "^"
+	}
+	for _, key := range aliasMatchRex.FindAllString(in.Text, -1) {
+		out.varKeys = append(out.varKeys, strings.Trim(key, "<>"))
+	}
+	rexString += aliasMatchRex.ReplaceAllString(in.Text, `([^ ]+)`)
+	if in.WholeWords {
+		rexString += " "
+	}
+
+	out.rex, err = regexp.Compile(rexString)
 	return
 }

@@ -34,7 +34,7 @@ func handleMessages(_ *astilectron.Window, m bootstrap.MessageIn) (payload inter
 				payload = err.Error()
 				return
 			}
-			toTelnet <- commandString
+			doAliases(commandString)
 		}
 	case "keybind":
 		var commandString string
@@ -47,7 +47,7 @@ func handleMessages(_ *astilectron.Window, m bootstrap.MessageIn) (payload inter
 			fmt.Println("Recieved keybind:", commandString)
 			for _, keybind := range keybinds {
 				if keybind.Guid == commandString {
-					doActions(keybind.Actions)
+					doActions(keybind.Actions, nil)
 				}
 			}
 		}
