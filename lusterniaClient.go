@@ -33,8 +33,6 @@ var (
 	telnetClose  chan bool
 	toTelnet     chan string
 	toAstiWindow chan bootstrap.MessageOut
-
-	listenerStore messageListenerStore
 )
 
 func init() {
@@ -43,7 +41,6 @@ func init() {
 	telnetClose = make(chan bool)
 	toAstiWindow = make(chan bootstrap.MessageOut)
 	toTelnet = make(chan string)
-	listenerStore = newMessageListenerStore()
 }
 
 func main() {

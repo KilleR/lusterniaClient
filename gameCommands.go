@@ -12,11 +12,12 @@ import (
 
 var (
 	variableRex      *regexp.Regexp
-	messageListeners messageListener
+	messageListeners messageListenerStore
 )
 
 func init() {
 	variableRex = regexp.MustCompile(`@([^ ]+)`)
+	messageListeners = newMessageListenerStore()
 }
 
 func processCommand(rawCommand string, commandVars map[string]string) (out []string) {
@@ -109,6 +110,15 @@ func doActions(actions []reflexAction, tmpVars map[string]string) {
 				Name:    "notify",
 				Payload: action,
 			}
+		case "highlight":
+			//action.Highlight = replaceVars(action.Highlight, tmpVars)
+			action.Notice = action.Highlight
+			action.NoticeFg = action.HighlightFg
+			action.NoticeBg = action.HighlightBg
+			toAstiWindow <- bootstrap.MessageOut{
+				Name:    "notify",
+				Payload: action,
+			}
 		case "variable":
 			var varValue string
 
@@ -144,6 +154,14 @@ func doActions(actions []reflexAction, tmpVars map[string]string) {
 }
 
 func handleInboundMessage(msg string) {
+
+	for _, t := range triggers {
+		tmpVars := t.match(msg)
+		if tmpVars != nil {
+			fmt.Println("Have match for trigger:", t.Guid, tmpVars)
+			doActions(t.Actions, tmpVars)
+		}
+	}
 
 	if err := bootstrap.SendMessage(w, "telnet.content", msg); err != nil {
 		astilog.Error(errors.Wrap(err, "sending telnet content failed"))

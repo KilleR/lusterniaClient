@@ -42,17 +42,21 @@ type reflex struct {
 }
 
 type reflexAction struct {
-	Action       string  `json:"action"`
-	Notice       string  `json:"notice"`
-	NoticeFg     string  `json:"notice_fg"`
-	NoticeBg     string  `json:"notice_bg"`
-	Command      string  `json:"command"`
-	Seconds      FlexInt `json:"seconds"`
-	Milliseconds FlexInt `json:"milliseconds"`
-	ValType      string  `json:"valtype"`
-	VarName      string  `json:"varname"`
-	Value        string  `json:"value"`
-	Op           string  `json:"op"`
+	Action           string  `json:"action"`
+	Notice           string  `json:"notice"`
+	NoticeFg         string  `json:"notice_fg"`
+	NoticeBg         string  `json:"notice_bg"`
+	Highlight        string  `json:"highlight"`
+	HighlightBackref string  `json:"highlight_backref"`
+	HighlightFg      string  `json:"highlight_fg"`
+	HighlightBg      string  `json:"highlight_bg"`
+	Command          string  `json:"command"`
+	Seconds          FlexInt `json:"seconds"`
+	Milliseconds     FlexInt `json:"milliseconds"`
+	ValType          string  `json:"valtype"`
+	VarName          string  `json:"varname"`
+	Value            string  `json:"value"`
+	Op               string  `json:"op"`
 }
 
 type matcher struct {
@@ -264,6 +268,7 @@ func isValidActionType(action reflexAction) bool {
 		default:
 			return false
 		}
+	case "highlight":
 	case "waitfor":
 	case "stop":
 	default:
@@ -282,8 +287,12 @@ func reflexToTrigger(in reflex) (out trigger, err error) {
 		out.varKeys = append(out.varKeys, strings.Trim(key, "<>"))
 	}
 	rexString += aliasMatchRex.ReplaceAllString(in.Text, `([^ ]+)`)
+	if in.WholeWords {
+		rexString += "(?: |$)"
+	}
 
 	out.rex, err = regexp.Compile(rexString)
+	fmt.Println("made trigger:", in.Guid, rexString)
 	return
 }
 

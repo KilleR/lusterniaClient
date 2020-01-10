@@ -44,11 +44,17 @@ type messageListener struct {
 	command chan string
 }
 
-func (listener *messageListener) listen() {
-	for {
-		cmd := <-listener.command
-		if listener.match(cmd) != nil {
-			listener.done <- true
+func newMessageListener() (l messageListener) {
+	l.command = make(chan string)
+	l.done = make(chan bool)
+
+	go func() {
+		for {
+			cmd := <-l.command
+			if l.match(cmd) != nil {
+				l.done <- true
+			}
 		}
-	}
+	}()
+	return
 }
