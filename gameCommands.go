@@ -10,6 +10,11 @@ import (
 	"time"
 )
 
+type commandLine struct {
+	string
+	gag bool
+}
+
 var (
 	variableRex      *regexp.Regexp
 	messageListeners messageListenerStore
@@ -34,7 +39,6 @@ func processCommand(rawCommand string, commandVars map[string]string) (out []str
 func replaceVars(in string, tmpVars map[string]string) string {
 	matches := variableRex.FindAllStringSubmatch(in, -1)
 
-	fmt.Println("Doing replacement:", in, tmpVars)
 	for _, match := range matches {
 		var outVal string
 		varName := match[1]
@@ -57,31 +61,34 @@ func replaceVars(in string, tmpVars map[string]string) string {
 	return in
 }
 
-func doAliases(command string) (out string) {
+func (line *commandLine) doAliases() (out string) {
 	for _, alias := range aliases {
-		tmpVars := alias.match(command)
+		if !alias.Enabled {
+			continue
+		}
+		tmpVars := alias.match(line.string)
 		if tmpVars != nil {
 			fmt.Println("action:", alias.Actions, tmpVars)
 
 			if alias.PrefixSuffix {
-				prefix, suffix := alias.split(command)
+				prefix, suffix := alias.split(line.string)
 				tmpVars["prefix"] = prefix
 				tmpVars["suffix"] = suffix
-
-				fmt.Println(command, alias.rex, prefix, suffix)
 			}
 
-			doActions(alias.Actions, tmpVars)
+			line.doActions(alias, tmpVars)
 			return
 		}
 	}
-	fmt.Println("command to telnet:", command)
-	toTelnet <- command
+	fmt.Println("command to telnet:", line)
+	if !line.gag {
+		toTelnet <- line.string
+	}
 	return
 }
 
-func doActions(actions []reflexAction, tmpVars map[string]string) {
-	for _, action := range actions {
+func (line *commandLine) doActions(processor reflexProcessor, tmpVars map[string]string) {
+	for _, action := range processor.Actions {
 		switch action.Action {
 		case "command", "":
 			for _, command := range processCommand(action.Command, tmpVars) {
@@ -111,14 +118,10 @@ func doActions(actions []reflexAction, tmpVars map[string]string) {
 				Payload: action,
 			}
 		case "highlight":
-			//action.Highlight = replaceVars(action.Highlight, tmpVars)
-			action.Notice = action.Highlight
-			action.NoticeFg = action.HighlightFg
-			action.NoticeBg = action.HighlightBg
-			toAstiWindow <- bootstrap.MessageOut{
-				Name:    "notify",
-				Payload: action,
-			}
+			var highlight string
+			highlight += fmt.Sprintf(`<span style="background-color:%s; color: %s">%s</span>`, action.HighlightBg, action.HighlightFg, processor.find(line.string))
+			line.string = processor.replace(line.string, highlight)
+			line.string = replaceVars(line.string, tmpVars)
 		case "variable":
 			var varValue string
 
@@ -143,6 +146,8 @@ func doActions(actions []reflexAction, tmpVars map[string]string) {
 				fmt.Println("Setting", action.VarName, "to", varValue)
 				nexusVars[action.VarName] = varValue
 			}
+		case "gag":
+			line.gag = true
 		case "waitfor":
 			// TODO : properly handle waitfor
 			return
@@ -154,16 +159,18 @@ func doActions(actions []reflexAction, tmpVars map[string]string) {
 }
 
 func handleInboundMessage(msg string) {
+	var line commandLine
+	line.string = msg
 
 	for _, t := range triggers {
 		tmpVars := t.match(msg)
 		if tmpVars != nil {
 			fmt.Println("Have match for trigger:", t.Guid, tmpVars)
-			doActions(t.Actions, tmpVars)
+			line.doActions(t, tmpVars)
 		}
 	}
 
-	if err := bootstrap.SendMessage(w, "telnet.content", msg); err != nil {
+	if err := bootstrap.SendMessage(w, "telnet.content", line.string); err != nil {
 		astilog.Error(errors.Wrap(err, "sending telnet content failed"))
 	}
 }

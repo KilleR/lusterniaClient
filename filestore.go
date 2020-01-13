@@ -76,6 +76,12 @@ func (m matcher) match(in string) (tmpVars map[string]string) {
 	return
 }
 
+func (m matcher) find(in string) (out string) {
+	out = m.rex.FindString(in)
+
+	return
+}
+
 func (m matcher) replace(in string, repl string) (out string) {
 	out = m.rex.ReplaceAllString(in, repl)
 
@@ -95,12 +101,7 @@ func (m matcher) split(in string) (prefix string, suffix string) {
 	}
 }
 
-type alias struct {
-	reflex
-	matcher
-}
-
-type trigger struct {
+type reflexProcessor struct {
 	reflex
 	matcher
 }
@@ -135,9 +136,9 @@ var (
 	nexusVars     map[string]interface{}
 	nexusReflexes reflexPackage
 	nexusPackages []reflexPackage
-	keybinds      []reflex
-	aliases       []alias
-	triggers      []trigger
+	keybinds      []reflexProcessor
+	aliases       []reflexProcessor
+	triggers      []reflexProcessor
 	aliasMatchRex *regexp.Regexp
 )
 
@@ -204,19 +205,27 @@ func doFileStore(raw []byte) (err error) {
 			case "keybind":
 				for _, action := range reflex.Actions {
 					if !isValidActionType(action) {
+						fmt.Println(reflex.Guid, "no valid action")
 						continue reflexLoop
 					}
+				}
+				keybind, err := reflexToProcessor(reflex)
+				if err != nil {
+					// TODO handle UI display of failed reflex conversion
+					fmt.Println("Failed to map alias:", err)
+					break
 				}
 				workingReflexes++
 				//fmt.Println("Working reflex:", reflex.Id, reflex.Name, reflex.Key, reflex.Actions)
-				keybinds = append(keybinds, reflex)
+				keybinds = append(keybinds, keybind)
 			case "alias":
 				for _, action := range reflex.Actions {
 					if !isValidActionType(action) {
+						fmt.Println(reflex.Guid, "no valid action")
 						continue reflexLoop
 					}
 				}
-				alias, err := reflexToAlias(reflex)
+				alias, err := reflexToProcessor(reflex)
 				if err != nil {
 					// TODO handle UI display of failed reflex conversion
 					fmt.Println("Failed to map alias:", err)
@@ -229,10 +238,11 @@ func doFileStore(raw []byte) (err error) {
 			case "trigger":
 				for _, action := range reflex.Actions {
 					if !isValidActionType(action) {
+						fmt.Println(reflex.Guid, "no valid action")
 						continue reflexLoop
 					}
 				}
-				trigger, err := reflexToTrigger(reflex)
+				trigger, err := reflexToProcessor(reflex)
 				if err != nil {
 					// TODO handle UI display of failed reflex conversion
 					fmt.Println("Failed to map alias:", err)
@@ -270,33 +280,16 @@ func isValidActionType(action reflexAction) bool {
 		}
 	case "highlight":
 	case "waitfor":
+	case "gag":
 	case "stop":
 	default:
+		fmt.Println("Invalid action type:", action.Action)
 		return false
 	}
 	return true
 }
 
-func reflexToTrigger(in reflex) (out trigger, err error) {
-	out.reflex = in
-	var rexString string
-	if in.Matching == "begins" {
-		rexString += "^"
-	}
-	for _, key := range aliasMatchRex.FindAllString(in.Text, -1) {
-		out.varKeys = append(out.varKeys, strings.Trim(key, "<>"))
-	}
-	rexString += aliasMatchRex.ReplaceAllString(in.Text, `([^ ]+)`)
-	if in.WholeWords {
-		rexString += "(?: |$)"
-	}
-
-	out.rex, err = regexp.Compile(rexString)
-	fmt.Println("made trigger:", in.Guid, rexString)
-	return
-}
-
-func reflexToAlias(in reflex) (out alias, err error) {
+func reflexToProcessor(in reflex) (out reflexProcessor, err error) {
 	out.reflex = in
 	var rexString string
 	if in.Matching == "begins" {
@@ -313,3 +306,21 @@ func reflexToAlias(in reflex) (out alias, err error) {
 	out.rex, err = regexp.Compile(rexString)
 	return
 }
+
+//func reflexToAlias(in reflex) (out reflexProcessor, err error) {
+//	out.reflex = in
+//	var rexString string
+//	if in.Matching == "begins" {
+//		rexString += "^"
+//	}
+//	for _, key := range aliasMatchRex.FindAllString(in.Text, -1) {
+//		out.varKeys = append(out.varKeys, strings.Trim(key, "<>"))
+//	}
+//	rexString += aliasMatchRex.ReplaceAllString(in.Text, `([^ ]+)`)
+//	if in.WholeWords {
+//		rexString += "(?: |$)"
+//	}
+//
+//	out.rex, err = regexp.Compile(rexString)
+//	return
+//}

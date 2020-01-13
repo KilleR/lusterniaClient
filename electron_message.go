@@ -10,69 +10,31 @@ import (
 // handleMessages handles messages
 func handleMessages(_ *astilectron.Window, m bootstrap.MessageIn) (payload interface{}, err error) {
 	switch m.Name {
-	case "explore":
-		// Unmarshal payload
-		var path string
-		if len(m.Payload) > 0 {
-			// Unmarshal payload
-			if err = json.Unmarshal(m.Payload, &path); err != nil {
-				payload = err.Error()
-				return
-			}
-		}
-
-		// Explore
-		if payload, err = explore(path); err != nil {
-			payload = err.Error()
-			return
-		}
 	case "command":
-		var commandString string
+		var commandString commandLine
 		if len(m.Payload) > 0 {
 			// Unmarshal payload
-			if err = json.Unmarshal(m.Payload, &commandString); err != nil {
+			if err = json.Unmarshal(m.Payload, &commandString.string); err != nil {
 				payload = err.Error()
 				return
 			}
-			doAliases(commandString)
+			commandString.doAliases()
 		}
 	case "keybind":
-		var commandString string
+		var line commandLine
 		if len(m.Payload) > 0 {
 			// Unmarshal payload
-			if err = json.Unmarshal(m.Payload, &commandString); err != nil {
+			if err = json.Unmarshal(m.Payload, &line.string); err != nil {
 				payload = err.Error()
 				return
 			}
-			fmt.Println("Recieved keybind:", commandString)
+			fmt.Println("Received keybind:", line)
 			for _, keybind := range keybinds {
-				if keybind.Guid == commandString {
-					doActions(keybind.Actions, nil)
+				if keybind.Guid == line.string {
+					line.doActions(keybind, nil)
 				}
 			}
 		}
 	}
-	return
-}
-
-// Exploration represents the results of an exploration
-type Exploration struct {
-	Dirs       []Dir  `json:"dirs"`
-	Files      string `json:"files,omitempty"`
-	FilesCount int    `json:"files_count"`
-	FilesSize  string `json:"files_size"`
-	Path       string `json:"path"`
-}
-
-// PayloadDir represents a dir payload
-type Dir struct {
-	Name string `json:"name"`
-	Path string `json:"path"`
-}
-
-// explore explores a path.
-// If path is empty, it explores the user's home directory
-func explore(path string) (s string, err error) {
-	s = path
 	return
 }
