@@ -9,7 +9,6 @@ import (
 	bootstrap "github.com/asticode/go-astilectron-bootstrap"
 	"github.com/asticode/go-astilog"
 	"github.com/pkg/errors"
-	"time"
 )
 
 // Constants
@@ -75,12 +74,6 @@ func bootstrapAstilectron() {
 		}},
 		OnWait: func(astiMain *astilectron.Astilectron, ws []*astilectron.Window, _ *astilectron.Menu, _ *astilectron.Tray, _ *astilectron.Menu) error {
 			w = ws[0]
-			go func() {
-				time.Sleep(5 * time.Second)
-				if err := bootstrap.SendMessage(w, "check.out.menu", "Don't forget to check out the menu!"); err != nil {
-					astilog.Error(errors.Wrap(err, "sending check.out.menu event failed"))
-				}
-			}()
 
 			go func() {
 				telnetOut := make(chan string)

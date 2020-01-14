@@ -57,6 +57,8 @@ type reflexAction struct {
 	VarName          string  `json:"varname"`
 	Value            string  `json:"value"`
 	Op               string  `json:"op"`
+	Type             string  `json:"type"`
+	Name             string  `json:"name"`
 }
 
 type matcher struct {
@@ -281,6 +283,15 @@ func isValidActionType(action reflexAction) bool {
 	case "highlight":
 	case "waitfor":
 	case "gag":
+	case "disableme":
+	case "enable":
+		switch action.Type {
+		case "trigger":
+		case "alias":
+		case "keybind":
+		default:
+			return false
+		}
 	case "stop":
 	default:
 		fmt.Println("Invalid action type:", action.Action)
@@ -298,13 +309,31 @@ func reflexToProcessor(in reflex) (out reflexProcessor, err error) {
 	for _, key := range aliasMatchRex.FindAllString(in.Text, -1) {
 		out.varKeys = append(out.varKeys, strings.Trim(key, "<>"))
 	}
-	rexString += aliasMatchRex.ReplaceAllString(in.Text, `([^ ]+)`)
+	rexString += aliasMatchRex.ReplaceAllString(in.Text, `([^ \r\n]+)`)
 	if in.WholeWords {
-		rexString += "(?: |$)"
+		rexString += "(?: |$|\n|\r)"
 	}
 
 	out.rex, err = regexp.Compile(rexString)
 	return
+}
+
+func enableReflex(reflexType string, name string) {
+	var reflexSet []reflexProcessor
+	switch reflexType {
+	case "trigger":
+		reflexSet = triggers
+	case "alias":
+		reflexSet = aliases
+	case "keybind":
+		reflexSet = keybinds
+	}
+
+	for _, v := range reflexSet {
+		if v.Name == name {
+			v.Enabled = true
+		}
+	}
 }
 
 //func reflexToAlias(in reflex) (out reflexProcessor, err error) {

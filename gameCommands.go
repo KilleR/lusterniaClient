@@ -151,6 +151,10 @@ func (line *commandLine) doActions(processor reflexProcessor, tmpVars map[string
 		case "waitfor":
 			// TODO : properly handle waitfor
 			return
+		case "disableme":
+			processor.Enabled = false
+		case "enable":
+			enableReflex(action.Type, action.Name)
 		case "stop":
 			return
 
