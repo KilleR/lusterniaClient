@@ -7,6 +7,7 @@ import {filter, pluck, share, tap} from 'rxjs/operators';
 import {Entity, Player, Vitals} from '../gmcp';
 import {HistoryService} from '../services';
 import {BehaviorSubject} from 'rxjs';
+import {Affliction} from '../gmcp/affliction';
 
 class Keybind {
   id: string;
@@ -46,6 +47,7 @@ export class WrapperComponent implements OnInit {
   ];
 
   vitals: Vitals = new Vitals();
+  afflictions: Affliction[] = [];
 
   room: {
     players: Player[],
@@ -228,13 +230,37 @@ export class WrapperComponent implements OnInit {
             this.vitals = Vitals.fromJsonString(content);
             console.log('new vitals:', this.vitals);
             break;
+          case 'Afflictions':
+            switch (gmcpMethodPath[3]) {
+              case 'List':
+                this.afflictions = Affliction.fromJsonString(content);
+                break;
+              case 'Add':
+                this.afflictions.push(...Affliction.fromJsonString(content));
+                break;
+              case 'Remove':
+                const toDel = JSON.parse(content)
+                this.afflictions = this.afflictions.filter(affliction => {
+                  let shouldRemain = true;
+                  toDel.forEach(aff => {
+                    if (aff === affliction.name) {
+                      shouldRemain = false;
+                    }
+                  });
+                  return shouldRemain;
+                })
+                break;
+              default:
+                console.log('[GMCP] Unknown Char.Afflictions Method:', method);
+            }
+            break;
           case 'Items':
             switch (gmcpMethodPath[3]) {
               case 'List':
                 this.room.entities = Entity.fromJsonString(content);
                 break;
               default:
-                console.log('[GMCP] Unknown Room.Items Method:', method);
+                console.log('[GMCP] Unknown Char.Items Method:', method);
             }
             break;
           default:

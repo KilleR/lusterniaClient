@@ -1,12 +1,12 @@
 #wrapper {
   height: 100vh;
   display: grid;
-  grid-template-columns: 3fr 1fr;
+  grid-template-columns: 1fr 3fr 1fr;
   grid-template-rows: auto 1fr auto;
   grid-template-areas:
-    "header header"
-    "main vitals"
-    "input input";
+    "header header header"
+    "afflictions main vitals"
+    "afflictions input vitals";
 }
 
 #prompt {
@@ -25,12 +25,18 @@
   grid-area: input;
 }
 
-::ng-deep .mat-form-field-wrapper {
-  padding-bottom: 0;
+.afflictions {
+  grid-area: afflictions;
+  overflow: auto;
+  overflow-x: hidden;
 }
 
 .vitals {
   grid-area: vitals;
   overflow: auto;
   overflow-x: hidden;
+}
+
+::ng-deep .mat-form-field-wrapper {
+  padding-bottom: 0;
 }

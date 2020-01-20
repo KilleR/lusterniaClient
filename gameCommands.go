@@ -162,19 +162,27 @@ func (line *commandLine) doActions(processor reflexProcessor, tmpVars map[string
 	}
 }
 
-func handleInboundMessage(msg string) {
-	var line commandLine
-	line.string = msg
+func handleInboundMessage(rawMsg string) {
+	msgs := strings.Split(rawMsg, "\n")
 
-	for _, t := range triggers {
-		tmpVars := t.match(msg)
-		if tmpVars != nil {
-			fmt.Println("Have match for trigger:", t.Guid, tmpVars)
-			line.doActions(t, tmpVars)
+	for _, msg := range msgs {
+		msg = strings.ReplaceAll(msg, "\n", "")
+		//if len(msg) == 0 {
+		//	continue
+		//}
+		var line commandLine
+		line.string = msg
+
+		for _, t := range triggers {
+			tmpVars := t.match(msg)
+			if tmpVars != nil {
+				fmt.Println("Have match for trigger:", t.Guid, tmpVars)
+				line.doActions(t, tmpVars)
+			}
 		}
-	}
 
-	if err := bootstrap.SendMessage(w, "telnet.content", line.string); err != nil {
-		astilog.Error(errors.Wrap(err, "sending telnet content failed"))
+		if err := bootstrap.SendMessage(w, "telnet.content", line.string); err != nil {
+			astilog.Error(errors.Wrap(err, "sending telnet content failed"))
+		}
 	}
 }

@@ -6,10 +6,19 @@ export class Entity {
 
   static fromJsonString(input: string): Entity[] {
     const out = [];
-    const jsonInput = JSON.parse(input);
+    let jsonInput = JSON.parse(input);
     // console.log('JSON input (entities):', jsonInput);
 
-    for (const line of jsonInput.items) {
+    if (!Array.isArray(jsonInput.items)) {
+      if (jsonInput.item) {
+        jsonInput = [jsonInput.item];
+      } else {
+        jsonInput = [jsonInput];
+      }
+    } else {
+      jsonInput = jsonInput.items;
+    }
+    for (const line of jsonInput) {
       const p = new Entity();
 
 

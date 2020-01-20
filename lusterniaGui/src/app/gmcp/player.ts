@@ -4,8 +4,12 @@ export class Player {
 
   static fromJsonString(input: string): Player[] {
     const out = [];
-    const jsonInput = JSON.parse(input);
-    // console.log('JSON input (players):', jsonInput);
+    let jsonInput = JSON.parse(input);
+    // console.log('JSON input (entities):', jsonInput);
+
+    if (!Array.isArray(jsonInput)) {
+      jsonInput = [jsonInput];
+    }
 
     for (const line of jsonInput) {
       const p = new Player();

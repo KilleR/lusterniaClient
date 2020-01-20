@@ -17,6 +17,22 @@
     </form>
   </div>
 
+  <div class="afflictions">
+    <mat-accordion [multi]="true" [displayMode]="'flat'">
+      <mat-expansion-panel [expanded]="true">
+        <mat-expansion-panel-header collapsedHeight="32px" expandedHeight="40px">
+          <mat-panel-title>Afflictions</mat-panel-title>
+        </mat-expansion-panel-header>
+
+        <ng-container *ngIf="afflictions && afflictions.length; else noAfflictions">
+          <mat-chip *ngFor="let affliction of afflictions">{{affliction.name}}</mat-chip>
+        </ng-container>
+        <ng-template #noAfflictions>-</ng-template>
+      </mat-expansion-panel>
+    </mat-accordion>
+
+  </div>
+
   <div class="vitals">
     <app-vitals [vitals]="vitals" [entities]="room.entities" [players]="room.players"></app-vitals>
   </div>
