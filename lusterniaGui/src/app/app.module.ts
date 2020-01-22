@@ -5,16 +5,34 @@ import {AppComponent} from './app.component';
 import {BrowserAnimationsModule} from '@angular/platform-browser/animations';
 import {Route, RouterModule} from '@angular/router';
 import {WrapperComponent} from './wrapper/wrapper.component';
-import {MatChipsModule, MatExpansionModule, MatInputModule, MatSliderModule, MatToolbarModule} from '@angular/material';
+import {
+  MatButtonModule,
+  MatCardModule,
+  MatChipsModule,
+  MatExpansionModule,
+  MatInputModule,
+  MatSliderModule,
+  MatToolbarModule
+} from '@angular/material';
 import {AstilectronModule} from './astilectron';
 import {ReactiveFormsModule} from '@angular/forms';
 import {VitalsComponent} from './vitals/vitals.component';
 import {CommonComponentsModule} from './common/common.module';
+import {LoginComponent} from './login/login.component';
 
 const routes: Route[] = [
   {
     path: '',
+    redirectTo: 'login',
+    pathMatch: 'full'
+  },
+  {
+    path: 'client',
     component: WrapperComponent,
+  },
+  {
+    path: 'login',
+    component: LoginComponent,
   }
 ];
 
@@ -22,7 +40,8 @@ const routes: Route[] = [
   declarations: [
     AppComponent,
     WrapperComponent,
-    VitalsComponent
+    VitalsComponent,
+    LoginComponent
   ],
   imports: [
     BrowserModule,
@@ -35,7 +54,9 @@ const routes: Route[] = [
     CommonComponentsModule,
     MatInputModule,
     MatExpansionModule,
-    MatChipsModule
+    MatChipsModule,
+    MatCardModule,
+    MatButtonModule
   ],
   providers: [],
   bootstrap: [AppComponent]

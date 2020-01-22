@@ -168,6 +168,31 @@ func doCustomTelnet(send chan string) (conn *telnet.Telnet) {
 	return
 }
 
+func doTelnetLogin(user string, pass string) (out chan string) {
+	out = make(chan string)
+
+	conn := doCustomTelnet(out)
+	go func() {
+		for {
+			select {
+			case <-telnetClose:
+				conn.Close()
+				return
+			case msg := <-out:
+				handleInboundMessage(msg)
+				break
+			case msg := <-toTelnet:
+				fmt.Println("to telnet:", msg+"\n")
+				conn.Write([]byte(msg + "\n"))
+				break
+			}
+		}
+	}()
+
+	conn.SendGMCP(fmt.Sprintf(`Core.Login { "name": "%s", "password": "%s" }`, user, pass))
+	return
+}
+
 func handleFilestoreData(raw interface{}) {
 	fmt.Println("have filestore data")
 	mapData := raw.(map[string]interface{})

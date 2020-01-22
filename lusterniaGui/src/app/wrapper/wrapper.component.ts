@@ -8,6 +8,7 @@ import {Entity, Player, Vitals} from '../gmcp';
 import {HistoryService} from '../services';
 import {BehaviorSubject} from 'rxjs';
 import {Affliction} from '../gmcp/affliction';
+import {Router} from '@angular/router';
 
 class Keybind {
   id: string;
@@ -62,6 +63,7 @@ export class WrapperComponent implements OnInit {
   @ViewChild('prompt', {static: false}) prompt: ElementRef;
 
   constructor(
+    private router: Router,
     private asti: Astilectron,
     private sanitizer: DomSanitizer,
     private fb: FormBuilder,
@@ -217,8 +219,9 @@ export class WrapperComponent implements OnInit {
             console.log('GOODBYE!');
             const htmlContent = this.sanitizer.bypassSecurityTrustHtml(this.convert.toHtml(content));
             this.writeToScreen(htmlContent);
+            this.router.navigate(['login']);
             // TODO: route to login
-            setTimeout(window.close, 2000);
+            // setTimeout(window.close, 2000);
             break;
           default:
             console.log('[GMCP] Unknown Core Method:', method);

@@ -10,6 +10,28 @@ import (
 // handleMessages handles messages
 func handleMessages(_ *astilectron.Window, m bootstrap.MessageIn) (payload interface{}, err error) {
 	switch m.Name {
+	case "login":
+		{
+			var loginString string
+			if len(m.Payload) > 0 {
+				// Unmarshal payload
+				if err = json.Unmarshal(m.Payload, &loginString); err != nil {
+					payload = err.Error()
+					return
+				}
+
+				// Unmarshal Login details
+				loginDetails := struct {
+					User string `json:"user"`
+					Pass string `json:"pass"`
+				}{}
+				if err = json.Unmarshal([]byte(loginString), &loginDetails); err != nil {
+					payload = err.Error()
+					return
+				}
+				fmt.Println("Log in gets!", loginDetails)
+			}
+		}
 	case "command":
 		var commandString commandLine
 		if len(m.Payload) > 0 {
