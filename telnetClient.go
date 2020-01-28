@@ -10,6 +10,7 @@ import (
 	"lusterniaClient/telnet"
 	"net"
 	"regexp"
+	"sync"
 	"syscall"
 	"time"
 )
@@ -91,8 +92,12 @@ func ansiToHtml(raw []byte) []byte {
 	return raw
 }
 
-func doCustomTelnet(send chan string) (conn *telnet.Telnet) {
+func doCustomTelnet() (conn *telnet.Telnet, send chan string) {
+	send = make(chan string)
 	var outbuff []byte
+
+	var telnetReady sync.WaitGroup
+	telnetReady.Add(1)
 
 	_conn, err := net.Dial("tcp", ServerAddr)
 	if err != nil {
@@ -107,14 +112,19 @@ func doCustomTelnet(send chan string) (conn *telnet.Telnet) {
 			matches := rex.FindStringSubmatch(string(bytes))
 			var gmcp messageGMCP
 			gmcp.Type = "GMCP"
-			gmcp.Method = matches[1]
-			json.Unmarshal([]byte(matches[2]), &gmcp.Data)
-			if gmcp.Method == "IRE.FileStore.Content" {
-				handleFilestoreData(gmcp.Data)
-			}
-			toAstiWindow <- bootstrap.MessageOut{
-				Name:    "GMCP." + matches[1],
-				Payload: matches[2],
+
+			if(len(matches) > 1) {
+				gmcp.Method = matches[1]
+				json.Unmarshal([]byte(matches[2]), &gmcp.Data)
+				if gmcp.Method == "IRE.FileStore.Content" {
+					handleFilestoreData(gmcp.Data)
+				}
+				toAstiWindow <- bootstrap.MessageOut{
+					Name:    "GMCP." + matches[1],
+					Payload: matches[2],
+				}
+			} else {
+				log.Println("WTF? Bad GMCP:", matches)
 			}
 		}
 	})
@@ -136,7 +146,8 @@ func doCustomTelnet(send chan string) (conn *telnet.Telnet) {
 		case telnet.ToString(telnet.BuildCommand(telnet.WILL, telnet.GMCP)):
 			conn.SendCommand(telnet.DO, telnet.GMCP)
 			conn.SendGMCP(`Core.Hello { "client": "Deathwish", "version": "0.0.1" }`)
-			conn.SendGMCP(`Core.Supports.Set ["Char 1", "Char.Skills 1", "Char.Items 1", "Comm.Channel 1", "IRE.Rift 1", "IRE.FileStore 1", "Room 1", "IRE.Composer 1", "Redirect 1", "IRE.Display 3", "IRE.Tasks 1", "IRE.Sound 1", "IRE.Misc 1", "IRE.Time 1", "IRE.Target 1"]`)
+			conn.SendGMCP(`Core.Supports.Set ["Core.Login", "Char 1", "Char.Skills 1", "Char.Items 1", "Comm.Channel 1", "IRE.Rift 1", "IRE.FileStore 1", "Room 1", "IRE.Composer 1", "Redirect 1", "IRE.Display 3", "IRE.Tasks 1", "IRE.Sound 1", "IRE.Misc 1", "IRE.Time 1", "IRE.Target 1"]`)
+			telnetReady.Done()
 			go func() {
 				select {
 				case <-terminate:
@@ -165,13 +176,14 @@ func doCustomTelnet(send chan string) (conn *telnet.Telnet) {
 		}
 	}()
 
+	telnetReady.Wait()
 	return
 }
 
-func doTelnetLogin(user string, pass string) (out chan string) {
-	out = make(chan string)
-
-	conn := doCustomTelnet(out)
+func doTelnetLogin(user string, pass string) {
+	fmt.Println("doing login with", user, pass)
+	conn, out := doCustomTelnet()
+	fmt.Println("Done connection")
 	go func() {
 		for {
 			select {
@@ -189,7 +201,10 @@ func doTelnetLogin(user string, pass string) (out chan string) {
 		}
 	}()
 
-	conn.SendGMCP(fmt.Sprintf(`Core.Login { "name": "%s", "password": "%s" }`, user, pass))
+	GMCPLstring := fmt.Sprintf(`Char.Login { "name": "%s", "password": "%s" }`, user, pass)
+	fmt.Println("sending:", GMCPLstring)
+	conn.SendGMCP(GMCPLstring)
+
 	return
 }
 

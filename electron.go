@@ -3,7 +3,6 @@ package main
 import (
 	"encoding/json"
 	"flag"
-	"fmt"
 	"github.com/asticode/go-astikit"
 	"github.com/asticode/go-astilectron"
 	bootstrap "github.com/asticode/go-astilectron-bootstrap"
@@ -75,24 +74,24 @@ func bootstrapAstilectron() {
 		OnWait: func(astiMain *astilectron.Astilectron, ws []*astilectron.Window, _ *astilectron.Menu, _ *astilectron.Tray, _ *astilectron.Menu) error {
 			w = ws[0]
 
-			go func() {
-				telnetOut := make(chan string)
-				conn := doCustomTelnet(telnetOut)
-				for {
-					select {
-					case <-telnetClose:
-						conn.Close()
-						return
-					case msg := <-telnetOut:
-						handleInboundMessage(msg)
-						break
-					case msg := <-toTelnet:
-						fmt.Println("to telnet:", msg+"\n")
-						conn.Write([]byte(msg + "\n"))
-						break
-					}
-				}
-			}()
+			//go func() {
+			//	telnetOut := make(chan string)
+			//	conn := doCustomTelnet(telnetOut)
+			//	for {
+			//		select {
+			//		case <-telnetClose:
+			//			conn.Close()
+			//			return
+			//		case msg := <-telnetOut:
+			//			handleInboundMessage(msg)
+			//			break
+			//		case msg := <-toTelnet:
+			//			fmt.Println("to telnet:", msg+"\n")
+			//			conn.Write([]byte(msg + "\n"))
+			//			break
+			//		}
+			//	}
+			//}()
 
 			go func() {
 				for {

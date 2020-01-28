@@ -19,6 +19,9 @@ export class LoginComponent implements OnInit {
       user: [''],
       pass: [''],
     });
+    this.asti.messages.subscribe(
+      msg => console.log('raw asti:', msg)
+    );
   }
 
   doLogin() {

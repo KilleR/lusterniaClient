@@ -30,6 +30,7 @@ func handleMessages(_ *astilectron.Window, m bootstrap.MessageIn) (payload inter
 					return
 				}
 				fmt.Println("Log in gets!", loginDetails)
+				doTelnetLogin(loginDetails.User, loginDetails.Pass)
 			}
 		}
 	case "command":
