@@ -7,8 +7,9 @@ import {filter, pluck, share, tap} from 'rxjs/operators';
 import {Entity, Player, Vitals} from '../gmcp';
 import {HistoryService} from '../services';
 import {BehaviorSubject} from 'rxjs';
-import {Affliction} from '../gmcp/affliction';
+import {Affliction} from '../gmcp';
 import {Router} from '@angular/router';
+import {Defence} from '../gmcp';
 
 class Keybind {
   id: string;
@@ -49,6 +50,7 @@ export class WrapperComponent implements OnInit {
 
   vitals: Vitals = new Vitals();
   afflictions: Affliction[] = [];
+  defences: Defence[] = [];
 
   room: {
     players: Player[],
@@ -232,6 +234,30 @@ export class WrapperComponent implements OnInit {
           case 'Vitals':
             this.vitals = Vitals.fromJsonString(content);
             console.log('new vitals:', this.vitals);
+            break;
+          case 'Defences':
+            switch (gmcpMethodPath[3]) {
+              case 'List':
+                this.defences = Defence.fromJsonString(content);
+                break;
+              case 'Add':
+                this.defences.push(...Defence.fromJsonString(content));
+                break;
+              case 'Remove':
+                const toDel = JSON.parse(content);
+                this.defences = this.defences.filter(defence => {
+                  let shouldRemain = true;
+                  toDel.forEach(aff => {
+                    if (aff === defence.name) {
+                      shouldRemain = false;
+                    }
+                  });
+                  return shouldRemain;
+                });
+                break;
+              default:
+                console.log('[GMCP] Unknown Char.Defences Method:', method);
+            }
             break;
           case 'Afflictions':
             switch (gmcpMethodPath[3]) {

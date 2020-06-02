@@ -31,6 +31,19 @@
       </mat-expansion-panel>
     </mat-accordion>
 
+    <mat-accordion [multi]="true" [displayMode]="'flat'">
+      <mat-expansion-panel [expanded]="true">
+        <mat-expansion-panel-header collapsedHeight="32px" expandedHeight="40px">
+          <mat-panel-title>Defences</mat-panel-title>
+        </mat-expansion-panel-header>
+
+        <ng-container *ngIf="defences && defences.length; else noDefences">
+          <mat-chip *ngFor="let defence of defences">{{defence.name}}</mat-chip>
+        </ng-container>
+        <ng-template #noDefences>-</ng-template>
+      </mat-expansion-panel>
+    </mat-accordion>
+
   </div>
 
   <div class="vitals">
