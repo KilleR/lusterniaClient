@@ -4,12 +4,11 @@ import * as Convert from 'ansi-to-html';
 import {DomSanitizer, SafeHtml} from '@angular/platform-browser';
 import {FormBuilder, FormGroup} from '@angular/forms';
 import {filter, pluck, share, tap} from 'rxjs/operators';
-import {Entity, Player, Vitals} from '../gmcp';
+import {Affliction, Defence, Entity, Player, Vitals} from '../gmcp';
 import {HistoryService} from '../services';
 import {BehaviorSubject} from 'rxjs';
-import {Affliction} from '../gmcp';
 import {Router} from '@angular/router';
-import {Defence} from '../gmcp';
+import {Room} from '../gmcp/room';
 
 class Keybind {
   id: string;
@@ -51,11 +50,18 @@ export class WrapperComponent implements OnInit {
   vitals: Vitals = new Vitals();
   afflictions: Affliction[] = [];
   defences: Defence[] = [];
+  map: {
+    top: number,
+    left: number,
+    src: string
+  } = {top: 0, left: 0, src: ''};
 
   room: {
+    info: Room,
     players: Player[],
     entities: Entity[],
   } = {
+    info: new Room(),
     entities: [],
     players: []
   };
@@ -300,6 +306,15 @@ export class WrapperComponent implements OnInit {
         switch (gmcpMethodPath[2]) {
           case 'Players':
             this.room.players = Player.fromJsonString(content);
+            break;
+          case 'Info':
+            this.room.info = Room.fromJsonString(content);
+            const mapParts = this.room.info.map.split(' ');
+            this.map = {
+              src: 'http://' + mapParts[0],
+              left: parseInt(mapParts[1], 10),
+              top: parseInt(mapParts[2], 10),
+            };
             break;
           default:
             console.log('[GMCP] Unknown Room Method:', method);

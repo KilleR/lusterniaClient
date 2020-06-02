@@ -17,6 +17,10 @@
     </form>
   </div>
 
+  <div class="map">
+    <app-map [offsetX]="map.left" [offsetY]="map.top" [source]="map.src"></app-map>
+  </div>
+
   <div class="afflictions">
     <mat-accordion [multi]="true" [displayMode]="'flat'">
       <mat-expansion-panel [expanded]="true">

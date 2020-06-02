@@ -1,0 +1,22 @@
+:host {
+  height: 250px;
+  width: 250px;
+  overflow: hidden;
+  display: block;
+  position: relative;
+  background-color: white;
+}
+
+img {
+  transform: scale(0.5);
+  transform-origin: top left;
+}
+
+.you-are-here {
+  position: absolute;
+  height: 6px;
+  width: 6px;
+  border: 2px dashed black;
+  top: 120px;
+  left: 120px;
+}

@@ -2,9 +2,10 @@
   height: 100vh;
   display: grid;
   grid-template-columns: 1fr 3fr 1fr;
-  grid-template-rows: auto 1fr auto;
+  grid-template-rows: auto 1fr 3fr auto;
   grid-template-areas:
     "header header header"
+    "map main vitals"
     "afflictions main vitals"
     "afflictions input vitals";
 }
@@ -23,6 +24,10 @@
 
 .main-input {
   grid-area: input;
+}
+
+.map {
+  grid-area: map;
 }
 
 .afflictions {

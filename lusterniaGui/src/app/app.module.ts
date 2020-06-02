@@ -19,6 +19,7 @@ import {ReactiveFormsModule} from '@angular/forms';
 import {VitalsComponent} from './vitals/vitals.component';
 import {CommonComponentsModule} from './common/common.module';
 import {LoginComponent} from './login/login.component';
+import { MapComponent } from './map/map.component';
 
 const routes: Route[] = [
   {
@@ -41,7 +42,8 @@ const routes: Route[] = [
     AppComponent,
     WrapperComponent,
     VitalsComponent,
-    LoginComponent
+    LoginComponent,
+    MapComponent
   ],
   imports: [
     BrowserModule,
