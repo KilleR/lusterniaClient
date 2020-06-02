@@ -219,7 +219,7 @@ export class WrapperComponent implements OnInit {
             console.log('GOODBYE!');
             const htmlContent = this.sanitizer.bypassSecurityTrustHtml(this.convert.toHtml(content));
             this.writeToScreen(htmlContent);
-            this.router.navigate(['login']);
+            setTimeout(() => this.router.navigate(['login']), 2000);
             // TODO: route to login
             // setTimeout(window.close, 2000);
             break;
@@ -242,7 +242,7 @@ export class WrapperComponent implements OnInit {
                 this.afflictions.push(...Affliction.fromJsonString(content));
                 break;
               case 'Remove':
-                const toDel = JSON.parse(content)
+                const toDel = JSON.parse(content);
                 this.afflictions = this.afflictions.filter(affliction => {
                   let shouldRemain = true;
                   toDel.forEach(aff => {
@@ -251,7 +251,7 @@ export class WrapperComponent implements OnInit {
                     }
                   });
                   return shouldRemain;
-                })
+                });
                 break;
               default:
                 console.log('[GMCP] Unknown Char.Afflictions Method:', method);
