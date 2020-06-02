@@ -6,8 +6,8 @@ import (
 	"github.com/asticode/go-astikit"
 	"github.com/asticode/go-astilectron"
 	bootstrap "github.com/asticode/go-astilectron-bootstrap"
-	"github.com/asticode/go-astilog"
 	"github.com/pkg/errors"
+	"log"
 )
 
 // Constants
@@ -30,12 +30,12 @@ var (
 
 func bootstrapAstilectron() {
 	// Init
-	astilog.SetHandyFlags()
 	flag.Parse()
-	astilog.FlagInit()
+
+	// Create logger
+	logger := log.New(log.Writer(), log.Prefix(), log.Flags())
 
 	// Run bootstrap
-	astilog.Debugf("Running app built at %s", BuiltAt)
 	if err := bootstrap.Run(bootstrap.Options{
 		Asset:    Asset,
 		AssetDir: AssetDir,
@@ -43,11 +43,12 @@ func bootstrapAstilectron() {
 			AppName:            AppName,
 			AppIconDarwinPath:  "resources/icon.icns",
 			AppIconDefaultPath: "resources/icon.png",
+			SingleInstance:     true,
 			VersionAstilectron: VersionAstilectron,
 			VersionElectron:    VersionElectron,
 		},
 		Debug:  *debug,
-		Logger: astilog.GetLogger(),
+		Logger: logger,
 		MenuOptions: []*astilectron.MenuItemOptions{{
 			Label: astikit.StrPtr("File"),
 			SubMenu: []*astilectron.MenuItemOptions{
@@ -58,12 +59,12 @@ func bootstrapAstilectron() {
 							// Unmarshal payload
 							var s string
 							if err := json.Unmarshal(m.Payload, &s); err != nil {
-								astilog.Error(errors.Wrap(err, "unmarshaling payload failed"))
+								logger.Println(errors.Wrap(err, "unmarshaling payload failed"))
 								return
 							}
-							astilog.Infof("About modal has been displayed and payload is %s!", s)
+							logger.Println("About modal has been displayed and payload is %s!", s)
 						}); err != nil {
-							astilog.Error(errors.Wrap(err, "sending about event failed"))
+							logger.Println(errors.Wrap(err, "sending about event failed"))
 						}
 						return
 					},
@@ -97,7 +98,7 @@ func bootstrapAstilectron() {
 				for {
 					msg := <-toAstiWindow
 					if err := bootstrap.SendMessage(w, msg.Name, msg.Payload); err != nil {
-						astilog.Error(errors.Wrap(err, "sending abstract message failed"))
+						logger.Println(errors.Wrap(err, "sending abstract message failed"))
 					}
 				}
 			}()
@@ -115,6 +116,6 @@ func bootstrapAstilectron() {
 			},
 		}},
 	}); err != nil {
-		astilog.Fatal(errors.Wrap(err, "running bootstrap failed"))
+		logger.Fatalln(errors.Wrap(err, "running bootstrap failed"))
 	}
 }

@@ -3,8 +3,8 @@ package main
 import (
 	"fmt"
 	bootstrap "github.com/asticode/go-astilectron-bootstrap"
-	"github.com/asticode/go-astilog"
 	"github.com/pkg/errors"
+	"log"
 	"regexp"
 	"strings"
 	"time"
@@ -107,7 +107,7 @@ func (line *commandLine) doActions(processor reflexProcessor, tmpVars map[string
 		case "wait":
 			waitTime, err := time.ParseDuration(fmt.Sprintf("%ds%dms", action.Seconds, action.Milliseconds))
 			if err != nil {
-				astilog.Error(err)
+				log.Println(err)
 				continue
 			}
 			time.Sleep(waitTime)
@@ -182,7 +182,7 @@ func handleInboundMessage(rawMsg string) {
 		}
 
 		if err := bootstrap.SendMessage(w, "telnet.content", line.string); err != nil {
-			astilog.Error(errors.Wrap(err, "sending telnet content failed"))
+			log.Println(errors.Wrap(err, "sending telnet content failed"))
 		}
 	}
 }
